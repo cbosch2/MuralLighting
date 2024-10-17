@@ -3,6 +3,7 @@ import { OrbitControls } from './jsm/controls/OrbitControls.js';
 import Stats from './jsm/libs/stats.module.js';
 import { GUI } from './jsm/libs/lil-gui.module.min.js'; // Import lil-gui for the exposure slider
 import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this loader
+import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
 
 // Parameters for GUI and exposure
 const params = {
@@ -71,6 +72,13 @@ exrLoader.load('./textures/XII/Artificial+Natural/pv2_c1.exr', function (texture
     console.log('Generació de mipmaps:', texture.generateMipmaps);
     console.log('MinFilter:', texture.minFilter);
     console.log('MagFilter:', texture.magFilter);
+    const {r, g, b} = analyzeTexture(texture); // max and min RGB values of the texture
+    // Output the results to the console
+    console.log('Texture RGB Analysis:');
+    console.log(`Red - Min: ${r.min}, Max: ${r.max}`);
+    console.log(`Green - Min: ${g.min}, Max: ${g.max}`);
+    console.log(`Blue - Min: ${b.min}, Max: ${b.max}`);
+
 
     // Create a basic material using the EXR texture
     const material = new THREE.MeshBasicMaterial({ map: texture });
