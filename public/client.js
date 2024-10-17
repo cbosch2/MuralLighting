@@ -7,6 +7,7 @@ import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this 
 // Parameters for GUI and exposure
 const params = {
     exposure: 1.0, 
+    colorMultiplier: 1.0,
     toneMapping: 'Reinhard'
 };
 
@@ -24,7 +25,7 @@ document.body.appendChild(renderer.domElement);
 renderer.toneMapping = toneMappingOptions[ params.toneMapping ];
 renderer.toneMappingExposure = params.exposure;
 
-// Custom Reinhard tone mapping (C / (1 + C))
+// Custom Reinhard tone mapping (C / (1 + C))--> C= color/intensidad del pixel
 THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
     'vec3 CustomToneMapping( vec3 color ) { return color; }',
     `
@@ -34,6 +35,7 @@ THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars
 
     vec3 CustomToneMapping( vec3 color ) {
         color *= toneMappingExposure;
+        color *= ${params.colorMultiplier}; // Apply colorMultiplier to adjust color intensity
         return ReinhardToneMapping(color);
     }
     `
@@ -97,6 +99,17 @@ toneMappingFolder.add(params, 'exposure', 0, 2, 0.01).name('Exposure').onChange(
     renderer.toneMappingExposure = params.exposure;  // Update the renderer's tone mapping exposure
     render(); // Re-render the scene whenever exposure is changed
 });
+
+// Color multiplier slider (to adjust the intensity C)
+toneMappingFolder.add(params, 'colorMultiplier', 0.1, 5, 0.1).name('Color Multiplier').onChange(() => {
+    // Recompile the shader with the updated colorMultiplier
+    THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+        /color \*= \d+(\.\d+)?;/, // RegEx to replace the previous multiplier value
+        `color *= ${params.colorMultiplier};`
+    );
+    render();
+});
+
 
 // Add tone mapping selection to GUI
 toneMappingFolder.add(params, 'toneMapping', Object.keys(toneMappingOptions)).name('Tone Mapping').onChange((value) => {
