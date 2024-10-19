@@ -4,46 +4,27 @@ import Stats from './jsm/libs/stats.module.js';
 import { GUI } from './jsm/libs/lil-gui.module.min.js'; // Import lil-gui for the exposure slider
 import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this loader
 import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
+import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
+import toneMappingLinear from './toneMappingLinear.js';
+import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 
-// Parameters for GUI and exposure
+const toneMappingMethods = [toneMappingLinear, toneMappingLinearGamma, toneMappingReinhardBasic]; // Add more tone mapping methods here
+
+// Parameters for GUI
 const params = {
-    exposure: 1.0, 
-    colorMultiplier: 1.0,
-    toneMapping: 'Reinhard'
+    toneMappingMethodName: toneMappingMethods[0].name // Default tone mapping method
 };
 
-const toneMappingOptions = {
-    None: THREE.NoToneMapping,
-    Linear: THREE.LinearToneMapping,
-    Reinhard: THREE.ReinhardToneMapping,
-    Custom: THREE.CustomToneMapping
-};
+
+
 // Set up the renderer
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-renderer.toneMapping = toneMappingOptions[ params.toneMapping ];
-renderer.toneMappingExposure = params.exposure;
-
-// Custom Reinhard tone mapping (C / (1 + C))--> C= color/intensidad del pixel
-THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
-    'vec3 CustomToneMapping( vec3 color ) { return color; }',
-    `
-    vec3 ReinhardToneMapping( vec3 color ) {
-        return color / (1.0 + color); // Reinhard tone mapping formula
-    }
-
-    vec3 CustomToneMapping( vec3 color ) {
-        color *= toneMappingExposure;
-        color *= ${params.colorMultiplier}; // Apply colorMultiplier to adjust color intensity
-        return ReinhardToneMapping(color);
-    }
-    `
-);
-
 // Create the scene
 const scene = new THREE.Scene();
+window.three = THREE; // For debugging
 
 // Set up the camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -51,38 +32,84 @@ camera.position.z = 2;
 
 // Set up Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableRotate = false;
+controls.mouseButtons = {
+	LEFT: THREE.MOUSE.PAN,
+	MIDDLE: THREE.MOUSE.DOLLY,
+	RIGHT: THREE.MOUSE.PAN
+}
 
 // Initialize stats for performance monitoring
 const stats = Stats();
 document.body.appendChild(stats.dom);
 
+// Tone mapping
+
+var toneMappingDefaultShaderCode = THREE.ShaderChunk.tonemapping_pars_fragment;
+renderer.toneMapping = THREE.CustomToneMapping; 
+renderer.toneMappingExposure = 1.0; // Default exposure value
+
+
 // Load an EXR image
+var maxInputLuminance = null;
+var avgInputLuminance = null;
+var material = null;
 const exrLoader = new EXRLoader();
 
-exrLoader.load('./textures/XII/Artificial+Natural/pv2_c1.exr', function (texture) {
+exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
     const aspectRatio = width / height;   // 1.777
 
-    // Set the EXR texture to use equirectangular mapping
-    texture.mapping = THREE.EquirectangularReflectionMapping;
+    // Analyze the texture
+    const {r, g, b} = analyzeTexture(texture); // max and min RGB values of the texture
+    maxInputLuminance = Math.max(r.max, g.max, b.max);
+    avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
+    
+    // Log the properties of the texture
     console.log('Format de la textura:', texture.format);
     console.log('Tipus de dades de la textura:', texture.type);
     console.log('Mida de la textura:', texture.image.width, 'x', texture.image.height);
     console.log('Generació de mipmaps:', texture.generateMipmaps);
     console.log('MinFilter:', texture.minFilter);
     console.log('MagFilter:', texture.magFilter);
-    const {r, g, b} = analyzeTexture(texture); // max and min RGB values of the texture
-    // Output the results to the console
+
     console.log('Texture RGB Analysis:');
-    console.log(`Red - Min: ${r.min}, Max: ${r.max}`);
-    console.log(`Green - Min: ${g.min}, Max: ${g.max}`);
-    console.log(`Blue - Min: ${b.min}, Max: ${b.max}`);
-
-
-    // Create a basic material using the EXR texture
-    const material = new THREE.MeshBasicMaterial({ map: texture });
-
+    console.log(`Red - Min: ${r.min}, Max: ${r.max}, Sum: ${r.sum}, Count:${r.count}, Avg: ${r.average}`);
+    console.log(`Green - Min: ${g.min}, Max: ${g.max}, Sum: ${g.sum}, Count:${g.count}, Avg: ${g.average}`);
+    console.log(`Blue - Min: ${b.min}, Max: ${b.max}, Sum: ${b.sum}, Count:${b.count}, Avg: ${b.average}`);
+    console.log('Max input luminance:', maxInputLuminance);
+    console.log('Avg input luminance:', avgInputLuminance);
+   
+    // Create a material using the EXR texture
+    material = new  THREE.ShaderMaterial({
+        uniforms: {
+            uTexture: { type: 't', value: texture }, // Add the texture as a uniform
+            maxInputLuminance: { value: () => maxInputLuminance*1.0 },
+            avgInputLuminance: { value: () => avgInputLuminance*1.0 },
+        },
+        toneMapped: false,
+        vertexShader: `
+      varying vec2 vUv;
+  
+      void main() {
+        vUv = uv; // Pass UV coordinates to the fragment shader
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uTexture;
+      varying vec2 vUv;
+  
+      void main() {
+        vec4 textureColor = texture2D(uTexture, vUv);
+        gl_FragColor = vec4(CustomToneMapping(textureColor.rgb),1.0); // Set the color of the fragment to the sampled texture color
+      }
+    `
+    });
+    material.originalFragmentShader = material.fragmentShader;
+    material.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material.originalFragmentShader;
+    
     // Create a plane geometry for displaying the image
     const geometry = new THREE.PlaneGeometry(3 * aspectRatio, 3); // Adjust the size as needed for the image
 
@@ -98,36 +125,27 @@ exrLoader.load('./textures/XII/Artificial+Natural/pv2_c1.exr', function (texture
     console.error('An error occurred while loading the EXR texture:', error);
 });
 
-// Create a GUI for the exposure control
+
+// Create a GUI for tone mapping
 const gui = new GUI();
 const toneMappingFolder = gui.addFolder( 'Tone Mapping' );
 
+// Add tone mapping selection dropdown
+var options = toneMappingMethods.map(method => method.name);
+toneMappingFolder.add(params, 'toneMappingMethodName', options).name('Tone mapping').onChange((value) => {
+     render();});
 
-toneMappingFolder.add(params, 'exposure', 0, 2, 0.01).name('Exposure').onChange(() => {
-    renderer.toneMappingExposure = params.exposure;  // Update the renderer's tone mapping exposure
-    render(); // Re-render the scene whenever exposure is changed
-});
-
-// Color multiplier slider (to adjust the intensity C)
-toneMappingFolder.add(params, 'colorMultiplier', 0.1, 5, 0.1).name('Color Multiplier').onChange(() => {
-    // Recompile the shader with the updated colorMultiplier
-    THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
-        /color \*= \d+(\.\d+)?;/, // RegEx to replace the previous multiplier value
-        `color *= ${params.colorMultiplier};`
-    );
-    render();
-});
-
-
-// Add tone mapping selection to GUI
-toneMappingFolder.add(params, 'toneMapping', Object.keys(toneMappingOptions)).name('Tone Mapping').onChange((value) => {
-    renderer.toneMapping = toneMappingOptions[value];
-    render(); // Re-render the scene whenever tone mapping is changed
-});
+// Add the parameters of each method
+for (var method of toneMappingMethods) {
+    var folder = toneMappingFolder.addFolder(method.name);
+    for (const [_, param] of Object.entries(method.parameters)) {
+        folder.add(param, "value", param.min, param.max).name(param.name).onChange((value) => {
+            render();
+        });        
+    }
+}
 
 toneMappingFolder.open();
-
-
 
 // Handle window resizing
 window.addEventListener('resize', function () {
@@ -142,10 +160,31 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
     stats.update();
+    renderer.render(scene, camera);
+}
+
+function setToneMappingMethod(method) {
+    if (material)    
+        material.fragmentShader = method.sourceCode + material.originalFragmentShader;
 }
 
 // Render function
 function render() {
+    var method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
+    setToneMappingMethod(method);
+    if (material) {
+        // update uniforms
+        material.uniforms.maxInputLuminance.value = maxInputLuminance;
+        material.uniforms.avgInputLuminance.value = avgInputLuminance;
+
+        for (const [key, param] of Object.entries(method.parameters)) {
+            if (material.uniforms[key])
+                material.uniforms[key].value = param.value;
+            else
+                material.uniforms[key] = {value: param.value};
+        } 
+        material.needsUpdate = true;
+    }
     renderer.render(scene, camera);
 }
 
