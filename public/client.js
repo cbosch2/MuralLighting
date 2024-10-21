@@ -133,7 +133,9 @@ const toneMappingFolder = gui.addFolder( 'Tone Mapping' );
 // Add tone mapping selection dropdown
 var options = toneMappingMethods.map(method => method.name);
 toneMappingFolder.add(params, 'toneMappingMethodName', options).name('Tone mapping').onChange((value) => {
-     render();});
+    updateFolders(value);
+    render();
+    });
 
 // Add the parameters of each method
 for (var method of toneMappingMethods) {
@@ -146,6 +148,20 @@ for (var method of toneMappingMethods) {
 }
 
 toneMappingFolder.open();
+updateFolders(params.toneMappingMethodName)
+
+// Function to collapse other folders and expand the selected one
+function updateFolders(selectedOption) {
+    console.log(selectedOption);
+    toneMappingFolder.folders.forEach(folder => {
+        console.log(folder._title);
+        if (folder._title === `${selectedOption}`) {
+            folder.open(); // Expand the selected folder
+        } else {
+            folder.close(); // Collapse all other folders
+        }
+    });
+}
 
 // Handle window resizing
 window.addEventListener('resize', function () {
