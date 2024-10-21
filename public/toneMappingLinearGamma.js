@@ -17,7 +17,7 @@ var shaderCode = `
 
 var shaderParameters = {
     "exposure": { min: 0.0, max: 1000.0, value: 30, name: "Exposure" },
-    "gamma": { min: 1.0, max: 4.0, value: 2.2, name: "Exposure" },
+    "gamma": { min: 1.0, max: 4.0, value: 2.2, name: "Gamma" },
 
 };
 
