@@ -7,8 +7,9 @@ import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture f
 import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
 import toneMappingLinear from './toneMappingLinear.js';
 import toneMappingLinearGamma from './toneMappingLinearGamma.js';
+import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 
-const toneMappingMethods = [toneMappingLinear, toneMappingLinearGamma, toneMappingReinhardBasic]; // Add more tone mapping methods here
+const toneMappingMethods = [toneMappingLinear, toneMappingLinearGamma, toneMappingReinhardBasic, toneMappingReinhardExtended]; // Add more tone mapping methods here
 
 // Parameters for GUI
 const params = {
@@ -50,6 +51,7 @@ renderer.toneMappingExposure = 1.0; // Default exposure value
 // Load an EXR image
 var maxInputLuminance = null;
 var avgInputLuminance = null;
+var logAvgInputLuminance = null;
 var material = null;
 const exrLoader = new EXRLoader();
 
@@ -59,9 +61,10 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     const aspectRatio = width / height;   // 1.777
 
     // Analyze the texture
-    const {r, g, b} = analyzeTexture(texture); // max and min RGB values of the texture
+    const {r, g, b, L} = analyzeTexture(texture); // max and min RGB values of the texture
     maxInputLuminance = Math.max(r.max, g.max, b.max);
     avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
+    logAvgInputLuminance = L.average;
     
     // Log the properties of the texture
     console.log('Format de la textura:', texture.format);
@@ -77,6 +80,22 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     console.log(`Blue - Min: ${b.min}, Max: ${b.max}, Sum: ${b.sum}, Count:${b.count}, Avg: ${b.average}`);
     console.log('Max input luminance:', maxInputLuminance);
     console.log('Avg input luminance:', avgInputLuminance);
+    console.log('Log Avg input L:', logAvgInputLuminance);
+    console.log('Max input L:', L.max);
+
+    //update the L_white of extended reinhard
+    toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
+    console.log(toneMappingFolder.folders);
+    // Find the corresponding folder in the GUI
+    const folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
+    if (folder) {
+        // Find the controller for the parameter based on its name
+        const controller = folder.controllers.find(ctrl => ctrl._name === "L White");
+        if (controller) {
+            // Update the GUI display
+            controller.updateDisplay();
+        } else console.log("NOT FOUND");
+    }
    
     // Create a material using the EXR texture
     material = new  THREE.ShaderMaterial({
@@ -84,6 +103,7 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
             uTexture: { type: 't', value: texture }, // Add the texture as a uniform
             maxInputLuminance: { value: () => maxInputLuminance*1.0 },
             avgInputLuminance: { value: () => avgInputLuminance*1.0 },
+            avg_L_w:           { value: () => logAvgInputLuminance*1.0 },
         },
         toneMapped: false,
         vertexShader: `
@@ -194,9 +214,11 @@ for (var method of toneMappingMethods) {
     for (const [_, param] of Object.entries(method.parameters)) {
         folder.add(param, "value", param.min, param.max).name(param.name).onChange((value) => {
             render();
-        });        
+        });   
+        console.log(method.name, " ", param.name, " ", param.value);     
     }
 }
+
 
 toneMappingFolder.open();
 updateFolders(params.toneMappingMethodName)
@@ -248,6 +270,8 @@ function render() {
         if (object.isMesh && object.material) {
             object.material.uniforms.maxInputLuminance.value = maxInputLuminance;
             object.material.uniforms.avgInputLuminance.value = avgInputLuminance;
+            object.material.uniforms.avg_L_w.value           = logAvgInputLuminance;
+            
 
             for (const [key, param] of Object.entries(method.parameters)) {
                 if (object.material.uniforms[key]) {
