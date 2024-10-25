@@ -16,6 +16,8 @@ const params = {
     toneMappingMethodName: toneMappingMethods[0].name // Default tone mapping method
 };
 
+
+
 // Set up the renderer
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -47,6 +49,7 @@ document.body.appendChild(stats.dom);
 var toneMappingDefaultShaderCode = THREE.ShaderChunk.tonemapping_pars_fragment;
 renderer.toneMapping = THREE.CustomToneMapping; 
 renderer.toneMappingExposure = 1.0; // Default exposure value
+
 
 // Load an EXR image
 var maxInputLuminance = null;
@@ -128,11 +131,11 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     material.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material.originalFragmentShader;
     
     // Create a plane geometry for displaying the image
-    const geometry = new THREE.PlaneGeometry(1.5 * aspectRatio, 1.5); // Adjust the size as needed for the image
+    const geometry = new THREE.PlaneGeometry(3 * aspectRatio, 3); // Adjust the size as needed for the image
 
     // Create a mesh using the geometry and material
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.x = -1.35;
+    
     // Add the mesh to the scene
     scene.add(mesh);
 
@@ -140,60 +143,6 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
 
 }, undefined, function (error) {
     console.error('An error occurred while loading the EXR texture:', error);
-});
-
-exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
-    const width = texture.image.width;
-    const height = texture.image.height;
-    const aspectRatio = width / height;
-
-    // Analyze the texture
-    const {r, g, b} = analyzeTexture(texture);
-    maxInputLuminance = Math.max(r.max, g.max, b.max);
-    avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
-
-    // Create a material using the second EXR texture
-    const material2 = new THREE.ShaderMaterial({
-        uniforms: {
-            uTexture: { type: 't', value: texture },
-            maxInputLuminance: { value: () => maxInputLuminance * 1.0 },
-            avgInputLuminance: { value: () => avgInputLuminance * 1.0 },
-        },
-        toneMapped: false,
-        vertexShader: `
-            varying vec2 vUv;
-            void main() {
-                vUv = uv;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform sampler2D uTexture;
-            varying vec2 vUv;
-            void main() {
-                vec4 textureColor = texture2D(uTexture, vUv);
-                gl_FragColor = vec4(CustomToneMapping(textureColor.rgb),1.0);
-            }
-        `
-    });
-    
-    material2.originalFragmentShader = material2.fragmentShader;
-    material2.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material2.originalFragmentShader;
-
-    // Create a plane geometry for the second EXR image
-    const geometry2 = new THREE.PlaneGeometry(1.5 * aspectRatio, 1.5);
-
-    // Create a mesh for the second image
-    const mesh2 = new THREE.Mesh(geometry2, material2);
-    mesh2.position.x = 1.35; // Position it to the right side
-
-    // Add the second mesh to the scene
-    scene.add(mesh2);
-
-    render(); // Render after the second EXR texture has loaded
-
-}, undefined, function (error) {
-    console.error('An error occurred while loading the second EXR texture:', error);
 });
 
 
@@ -253,37 +202,28 @@ function animate() {
 }
 
 function setToneMappingMethod(method) {
-    scene.traverse((object) => {
-        if (object.isMesh && object.material) {
-            object.material.fragmentShader = method.sourceCode + object.material.originalFragmentShader;
-            object.material.needsUpdate = true;
-        }
-    });
+    if (material)    
+        material.fragmentShader = method.sourceCode + material.originalFragmentShader;
 }
 
 // Render function
 function render() {
-    const method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
+    var method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
     setToneMappingMethod(method);
+    if (material) {
+        // update uniforms
+        material.uniforms.maxInputLuminance.value = maxInputLuminance;
+        material.uniforms.avgInputLuminance.value = avgInputLuminance;
+        material.uniforms.avg_L_w.value           = logAvgInputLuminance;
 
-    scene.traverse((object) => {
-        if (object.isMesh && object.material) {
-            object.material.uniforms.maxInputLuminance.value = maxInputLuminance;
-            object.material.uniforms.avgInputLuminance.value = avgInputLuminance;
-            object.material.uniforms.avg_L_w.value           = logAvgInputLuminance;
-            
-
-            for (const [key, param] of Object.entries(method.parameters)) {
-                if (object.material.uniforms[key]) {
-                    object.material.uniforms[key].value = param.value;
-                } else {
-                    object.material.uniforms[key] = { value: param.value };
-                }
-            }
-            object.material.needsUpdate = true;
-        }
-    });
-
+        for (const [key, param] of Object.entries(method.parameters)) {
+            if (material.uniforms[key])
+                material.uniforms[key].value = param.value;
+            else
+                material.uniforms[key] = {value: param.value};
+        } 
+        material.needsUpdate = true;
+    }
     renderer.render(scene, camera);
 }
 
