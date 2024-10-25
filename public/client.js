@@ -225,6 +225,7 @@ function render() {
         material.needsUpdate = true;
     }
     renderer.render(scene, camera);
+    //pedo
 }
 
 // Start the animation loop
