@@ -14,9 +14,8 @@ function analyzeTexture(texture) {
     var r = findMaxMinReduce(arr, 0);
     var g = findMaxMinReduce(arr, 1);
     var b = findMaxMinReduce(arr, 2);
-    var L = computeLuminanceStats(arr, Math.max(r.max,g.max,b.max));
 
-    return {r, g, b, L};
+    return {r, g, b};
 }
 
 /*
@@ -42,47 +41,6 @@ function findMaxMinReduce(arr, component) {
 
     result.average = result.sum / result.count;
     
-    return result;
-}
-
-/*
-* Function to find the maximum and minimum for R, G or B values in an array.
-* @param {number[]} arr - The array to analyze.
-* @returns {Object} Returns stats of the luminance including the value of 
-*                   the logarithmic avg luminance of the image as described in reinhard02 paper.
-*/
-function computeLuminanceStats(arr, max_rgb) {
-    const d = 0.00001;
-
-    const result = arr.reduce((acc, num, index) => {
-        const component = index % 4; // Determine the component type (0: R, 1: G, 2: B, 3: A)
-
-        if (component === 0) { // Start of a new pixel (Red component)
-            const r = arr[index];
-            const g = arr[index + 1];
-            const b = arr[index + 2];
-
-            // Calculate luminance using the CIE XYZ 1931 sRGB D65
-            const luminance = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
-            acc.sum += Math.log(luminance+d);
-            acc.count += 1;
-
-            if (luminance > acc.max) acc.max = luminance;
-            if (luminance < acc.min) acc.min = luminance;
-        }
-
-        return acc;
-    }, {
-        max: -Infinity, min: Infinity, 
-        sum: 0,
-        count: 0,
-        average: null
-    });
-
-    // Calculate the average luminance
-    result.average = Math.exp(result.sum / result.count);//the 1/N needs to be inside the exp or it fails
-    //console.log('Result avg: ', result.average);
-
     return result;
 }
 
