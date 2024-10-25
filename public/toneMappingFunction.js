@@ -55,6 +55,29 @@ class ToneMappingFunction {
         }
         this.parameters = parameters;
     }
+
+    // Method to update a parameter's value by its key
+    updateParameterValue(paramKey, newValue) {
+        const parameter = this.parameters[paramKey];
+        if (!parameter) {
+            console.error(`Parameter "${paramKey}" not found.`);
+            return;
+        }
+
+        // Check if the new value is within the min and max range, if they exist
+        if (parameter.min !== undefined && newValue < parameter.min) {
+            console.warn(`Value is below the minimum (${parameter.min}), setting to minimum.`);
+            parameter.value = parameter.min;
+        } else if (parameter.max !== undefined && newValue > parameter.max) {
+            console.warn(`Value is above the maximum (${parameter.max}), setting to maximum.`);
+            parameter.value = parameter.max;
+        } else {
+            // Update the parameter's value
+            parameter.value = newValue;
+        }
+
+        console.log(`Parameter "${paramKey}" updated to ${parameter.value}`);
+    }
 }
 
 export default ToneMappingFunction; 
