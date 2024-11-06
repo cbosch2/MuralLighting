@@ -74,7 +74,7 @@ var shaderCode = `
     }
     
     float compute_L(float L_w) {
-        return ((a)/avg_L_w)*L_w;//trick because a needs in [0,1], but we are with not normalized data.
+        return (a/avg_L_w)*L_w;
     }
 
     vec3 ReinhardExtendedToneMapping( vec3 color) {
@@ -98,17 +98,17 @@ var shaderCode = `
         //luminance does it so, we have two parameters a = [0,1] maps the image to mid tones
         //then luminance is changed using L_white that is the another parameter that we can modify and represents the max value of luminance that will be white.
 
-        color *= 65535./L_white;
+        color *= 65535.;//convert from [0,1] to raw_data
         vec3 toned_color = ReinhardExtendedToneMapping(color);
 
-        return toned_color/L_white;
+        return pow(toned_color, vec3(1.0 / 2.2));;
 
     }
     `
 
 var shaderParameters = {
     "a": { min: 0.0, max: 1.0, value: 0.18, name: "Key" },
-    "L_white": { min: 0.0, max: 15000.0, value: 15000.0, name: "L White" },
+    "L_white": { min: 0.0, max: 3.0, value: 1.0, name: "L White" },
 };
 
 const toneMappingReinhardExtended = new ToneMappingFunction("Reinhard Extended", shaderCode, shaderParameters);

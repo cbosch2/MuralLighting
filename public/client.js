@@ -101,7 +101,7 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     console.log('Max input L:', L.max);
 
     //update the L_white of extended reinhard
-    toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
+    //toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
     console.log(toneMappingFolder.folders);
     // Find the corresponding folder in the GUI
     const folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");

@@ -52,7 +52,7 @@ function findMaxMinReduce(arr, component) {
 *                   the logarithmic avg luminance of the image as described in reinhard02 paper.
 */
 function computeLuminanceStats(arr, max_rgb) {
-    const d = 0.00001;
+    const d = 0.0000001;
 
     const result = arr.reduce((acc, num, index) => {
         const component = index % 4; // Determine the component type (0: R, 1: G, 2: B, 3: A)
