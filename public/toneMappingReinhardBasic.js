@@ -10,14 +10,18 @@ var shaderCode = `
     }
 
     vec3 CustomToneMapping( vec3 color ) {
-        color *= 65535. / avgInputLuminance;
+        color *= 1. / avgInputLuminance;
         color *= exposure; 
-        return ReinhardBasicToneMapping(color);
+        vec3 toned_color = ReinhardBasicToneMapping(color);
+
+        return pow(toned_color, vec3(1.0 / 2.2));;
+        return toned_color;
+
     }
     `
 
 var shaderParameters = {
-    "exposure": { min: 0.0, max: 1000.0, value: 150, name: "Exposure" },
+    "exposure": { min: 0.0, max: 10.0, value: 1, name: "Exposure" },
 };
 
 const toneMappingReinhardBasic = new ToneMappingFunction("Reinhard Basic", shaderCode, shaderParameters);

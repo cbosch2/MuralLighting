@@ -7,14 +7,14 @@ var shaderCode = `
     
     vec3 CustomToneMapping( vec3 color ) 
     {
-        color *= (65535. / avgInputLuminance);
+        color *= (1./*65535.*/ / avgInputLuminance);
         color *= exposure; 
         return color;
     }
     `
 
 var shaderParameters = {
-    "exposure": { min: 0.0, max: 1000.0, value: 30, name: "Exposure" },
+    "exposure": { min: 0.0, max: 10.0, value: 1, name: "Exposure" },
 };
 
 const toneMappingLinear = new ToneMappingFunction("Linear", shaderCode, shaderParameters);

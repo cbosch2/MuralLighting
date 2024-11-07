@@ -92,15 +92,39 @@ var shaderCode = `
 
         return convert_Yxy2RGB(Yxy);
     }
+
+    vec3 ReinhardExtendedToneMappingXYZ( vec3 color) {
+
+        vec3 XYZ = convert_RGB2XYZ(color);
+
+        float L = compute_L(XYZ.y);
+
+        float numerator = L * (1.f + (L / (L_white * L_white)));
+        float denominator = 1.f + L;
+        
+        float L_d = numerator/denominator;
+
+        float scale = L_d / XYZ.y;
+
+        XYZ = XYZ * scale;
+
+        return convert_XYZ2RGB(XYZ);
+    }
    
     vec3 CustomToneMapping( vec3 color ) {
         //check why i'm not using eq 1 and 2 from the reinhard paper.
         //luminance does it so, we have two parameters a = [0,1] maps the image to mid tones
         //then luminance is changed using L_white that is the another parameter that we can modify and represents the max value of luminance that will be white.
 
-        color *= 65535.;//convert from [0,1] to raw_data
-        vec3 toned_color = ReinhardExtendedToneMapping(color);
+        color *= (1. / 0.05); // normalize to avgInputLuminance
+        
 
+        vec3 xyz = convert_RGB2XYZ(color);
+        //if(xyz.y > 0.05) return vec3(1,0,0);
+
+        vec3 toned_color = ReinhardExtendedToneMappingXYZ(color);
+
+        //return toned_color;
         return pow(toned_color, vec3(1.0 / 2.2));;
 
     }
@@ -108,7 +132,7 @@ var shaderCode = `
 
 var shaderParameters = {
     "a": { min: 0.0, max: 1.0, value: 0.18, name: "Key" },
-    "L_white": { min: 0.0, max: 3.0, value: 1.0, name: "L White" },
+    "L_white": { min: 0.0, max: 2, value: 1.1, name: "L White" },
 };
 
 const toneMappingReinhardExtended = new ToneMappingFunction("Reinhard Extended", shaderCode, shaderParameters);

@@ -54,6 +54,7 @@ var avgInputLuminance = null;
 var logAvgInputLuminance = null;
 var material = null;
 const exrLoader = new EXRLoader();
+exrLoader.setDataType(THREE.FloatType); 
 const VS = `
       varying vec2 vUv;
   
@@ -79,8 +80,11 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
 
     // Analyze the texture
     const {r, g, b, L} = analyzeTexture(texture); // max and min RGB values of the texture
+    
     maxInputLuminance = Math.max(r.max, g.max, b.max);
+    maxInputLuminance = 0.2126 * r.max + 0.7152 * g.max + 0.0722 * b.max;
     avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
+    avgInputLuminance = 0.2126 * r.average + 0.7152 * g.average + 0.0722 * b.average;
     logAvgInputLuminance = L.average;
     
     // Log the properties of the texture
@@ -118,9 +122,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     material = new  THREE.ShaderMaterial({
         uniforms: {
             uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-            maxInputLuminance: { value: () => maxInputLuminance*1.0 },
-            avgInputLuminance: { value: () => avgInputLuminance*1.0 },
-            avg_L_w:           { value: () => logAvgInputLuminance*1.0 },
+            maxInputLuminance: { value: () => maxInputLuminance },
+            avgInputLuminance: { value: () => avgInputLuminance },
+            avg_L_w:           { value: () => logAvgInputLuminance },
         },
         toneMapped: false,
         vertexShader: VS,
@@ -153,9 +157,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
     const material2 = new  THREE.ShaderMaterial({
         uniforms: {
             uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-            maxInputLuminance: { value: () => maxInputLuminance*1.0 },
-            avgInputLuminance: { value: () => avgInputLuminance*1.0 },
-            avg_L_w:           { value: () => logAvgInputLuminance*1.0 },
+            maxInputLuminance: { value: () => maxInputLuminance },
+            avgInputLuminance: { value: () => avgInputLuminance },
+            avg_L_w:           { value: () => logAvgInputLuminance },
         },
         toneMapped: false,
         vertexShader: VS,

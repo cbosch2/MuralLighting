@@ -14,7 +14,7 @@ function analyzeTexture(texture) {
     var r = findMaxMinReduce(arr, 0);
     var g = findMaxMinReduce(arr, 1);
     var b = findMaxMinReduce(arr, 2);
-    var L = computeLuminanceStats(arr, Math.max(r.max,g.max,b.max));
+    var L = computeLuminanceStats(arr, r.average/3 + g.average/3 + b.average/3);
 
     return {r, g, b, L};
 }
@@ -51,24 +51,30 @@ function findMaxMinReduce(arr, component) {
 * @returns {Object} Returns stats of the luminance including the value of 
 *                   the logarithmic avg luminance of the image as described in reinhard02 paper.
 */
-function computeLuminanceStats(arr, max_rgb) {
+function computeLuminanceStats(arr, max_L) {
     const d = 0.0000001;
 
     const result = arr.reduce((acc, num, index) => {
         const component = index % 4; // Determine the component type (0: R, 1: G, 2: B, 3: A)
 
         if (component === 0) { // Start of a new pixel (Red component)
-            const r = arr[index];
-            const g = arr[index + 1];
-            const b = arr[index + 2];
+            const r = arr[index]/0.05;
+            const g = arr[index + 1]/0.05;
+            const b = arr[index + 2]/0.05;
+
+
 
             // Calculate luminance using the CIE XYZ 1931 sRGB D65
             const luminance = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
-            acc.sum += Math.log(luminance+d);
-            acc.count += 1;
+            
+            //if(luminance < max_L*0.02) 
+            {
+                acc.sum += Math.log(luminance+d);
+                acc.count += 1;
 
-            if (luminance > acc.max) acc.max = luminance;
-            if (luminance < acc.min) acc.min = luminance;
+                if (luminance > acc.max) acc.max = luminance;
+                if (luminance < acc.min) acc.min = luminance;
+            }
         }
 
         return acc;
