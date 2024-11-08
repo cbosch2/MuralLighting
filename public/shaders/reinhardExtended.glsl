@@ -95,8 +95,10 @@ vec3 ReinhardExtendedToneMappingXYZ( vec3 color) {
     vec3 XYZ = convert_RGB2XYZ(color);
 
     float L = compute_L(XYZ.y);
+    
+    float lw = L_white;
 
-    float numerator = L * (1.f + (L / (L_white * L_white)));
+    float numerator = L * (1.f + (L / ((lw * lw))));
     float denominator = 1.f + L;
     
     float L_d = numerator/denominator;
@@ -113,8 +115,7 @@ vec3 CustomToneMapping( vec3 color ) {
     //luminance does it so, we have two parameters a = [0,1] maps the image to mid tones
     //then luminance is changed using L_white that is the another parameter that we can modify and represents the max value of luminance that will be white.
 
-    color *= (1. / 0.05); // normalize to avgInputLuminance
-    
+    //color *= (1. / 0.05); // normalize to avgInputLuminance
 
     vec3 xyz = convert_RGB2XYZ(color);
     //if(xyz.y > 0.05) return vec3(1,0,0);

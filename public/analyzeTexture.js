@@ -58,9 +58,9 @@ function computeLuminanceStats(arr, max_L) {
         const component = index % 4; // Determine the component type (0: R, 1: G, 2: B, 3: A)
 
         if (component === 0) { // Start of a new pixel (Red component)
-            const r = arr[index]/0.05;
-            const g = arr[index + 1]/0.05;
-            const b = arr[index + 2]/0.05;
+            const r = arr[index];
+            const g = arr[index + 1];
+            const b = arr[index + 2];
 
 
 

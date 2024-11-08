@@ -6,10 +6,10 @@ import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this 
 import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
 import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
 import toneMappingLinear from './toneMappingLinear.js';
-import toneMappingLinearGamma from './toneMappingLinearGamma.js';
+//import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 
-const toneMappingMethods = [toneMappingLinear, toneMappingLinearGamma, toneMappingReinhardBasic, toneMappingReinhardExtended]; // Add more tone mapping methods here
+const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended]; // Add more tone mapping methods here
 
 // Parameters for GUI
 const params = {
@@ -106,7 +106,8 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
 
     //update the L_white of extended reinhard
     //toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
-    console.log(toneMappingFolder.folders);
+    //toneMappingReinhardExtended.updateParameterConfig("L_white", 0, L.max*2, L.max);
+    //console.log(toneMappingFolder.folders);
     // Find the corresponding folder in the GUI
     const folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
     if (folder) {
@@ -114,7 +115,8 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
         const controller = folder.controllers.find(ctrl => ctrl._name === "L White");
         if (controller) {
             // Update the GUI display
-            controller.updateDisplay();
+            //controller.max(L.max*2);
+            //controller.updateDisplay();
         } else console.log("NOT FOUND");
     }
    
@@ -203,7 +205,7 @@ for (var method of toneMappingMethods) {
         folder.add(param, "value", param.min, param.max).name(param.name).onChange((value) => {
             render();
         });        
-        console.log(method.name, " ", param.name, " ", param.value);     
+        //console.log(method.name, " ", param.name, " ", param.value);     
     }
 }
 
@@ -212,9 +214,9 @@ updateFolders(params.toneMappingMethodName)
 
 // Function to collapse other folders and expand the selected one
 function updateFolders(selectedOption) {
-    console.log(selectedOption);
+    //console.log(selectedOption);
     toneMappingFolder.folders.forEach(folder => {
-        console.log(folder._title);
+        //console.log(folder._title);
         if (folder._title === `${selectedOption}`) {
             folder.open(); // Expand the selected folder
         } else {
