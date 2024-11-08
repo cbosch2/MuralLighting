@@ -78,6 +78,19 @@ class ToneMappingFunction {
 
         console.log(`Parameter "${paramKey}" updated to ${parameter.value}`);
     }
+
+    updateParameterConfig(paramKey, min, max, value) {
+        const parameter = this.parameters[paramKey];
+        if (!parameter) {
+            console.error(`Parameter "${paramKey}" not found.`);
+            return;
+        }
+
+        parameter.min = min;
+        parameter.max = max;
+        parameter.value = value;
+        console.log(`Parameter "${paramKey}" updated! "${min}" "${max}" "${value}"`);
+    }
 }
 
 export default ToneMappingFunction; 

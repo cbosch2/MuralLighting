@@ -6,10 +6,10 @@ import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this 
 import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
 import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
 import toneMappingLinear from './toneMappingLinear.js';
-import toneMappingLinearGamma from './toneMappingLinearGamma.js';
+//import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 
-const toneMappingMethods = [toneMappingLinear, toneMappingLinearGamma, toneMappingReinhardBasic, toneMappingReinhardExtended]; // Add more tone mapping methods here
+const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended]; // Add more tone mapping methods here
 
 // Parameters for GUI
 const params = {
@@ -54,6 +54,7 @@ var avgInputLuminance = null;
 var logAvgInputLuminance = null;
 var material = null;
 const exrLoader = new EXRLoader();
+exrLoader.setDataType(THREE.FloatType); 
 const VS = `
       varying vec2 vUv;
   
@@ -79,8 +80,11 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
 
     // Analyze the texture
     const {r, g, b, L} = analyzeTexture(texture); // max and min RGB values of the texture
+    
     maxInputLuminance = Math.max(r.max, g.max, b.max);
+    maxInputLuminance = 0.2126 * r.max + 0.7152 * g.max + 0.0722 * b.max;
     avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
+    avgInputLuminance = 0.2126 * r.average + 0.7152 * g.average + 0.0722 * b.average;
     logAvgInputLuminance = L.average;
     
     // Log the properties of the texture
@@ -101,8 +105,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     console.log('Max input L:', L.max);
 
     //update the L_white of extended reinhard
-    toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
-    console.log(toneMappingFolder.folders);
+    //toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
+    //toneMappingReinhardExtended.updateParameterConfig("L_white", 0, L.max*2, L.max);
+    //console.log(toneMappingFolder.folders);
     // Find the corresponding folder in the GUI
     const folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
     if (folder) {
@@ -110,7 +115,8 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
         const controller = folder.controllers.find(ctrl => ctrl._name === "L White");
         if (controller) {
             // Update the GUI display
-            controller.updateDisplay();
+            //controller.max(L.max*2);
+            //controller.updateDisplay();
         } else console.log("NOT FOUND");
     }
    
@@ -118,9 +124,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     material = new  THREE.ShaderMaterial({
         uniforms: {
             uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-            maxInputLuminance: { value: () => maxInputLuminance*1.0 },
-            avgInputLuminance: { value: () => avgInputLuminance*1.0 },
-            avg_L_w:           { value: () => logAvgInputLuminance*1.0 },
+            maxInputLuminance: { value: () => maxInputLuminance },
+            avgInputLuminance: { value: () => avgInputLuminance },
+            avg_L_w:           { value: () => logAvgInputLuminance },
         },
         toneMapped: false,
         vertexShader: VS,
@@ -153,9 +159,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
     const material2 = new  THREE.ShaderMaterial({
         uniforms: {
             uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-            maxInputLuminance: { value: () => maxInputLuminance*1.0 },
-            avgInputLuminance: { value: () => avgInputLuminance*1.0 },
-            avg_L_w:           { value: () => logAvgInputLuminance*1.0 },
+            maxInputLuminance: { value: () => maxInputLuminance },
+            avgInputLuminance: { value: () => avgInputLuminance },
+            avg_L_w:           { value: () => logAvgInputLuminance },
         },
         toneMapped: false,
         vertexShader: VS,
@@ -199,7 +205,7 @@ for (var method of toneMappingMethods) {
         folder.add(param, "value", param.min, param.max).name(param.name).onChange((value) => {
             render();
         });        
-        console.log(method.name, " ", param.name, " ", param.value);     
+        //console.log(method.name, " ", param.name, " ", param.value);     
     }
 }
 
@@ -208,9 +214,9 @@ updateFolders(params.toneMappingMethodName)
 
 // Function to collapse other folders and expand the selected one
 function updateFolders(selectedOption) {
-    console.log(selectedOption);
+    //console.log(selectedOption);
     toneMappingFolder.folders.forEach(folder => {
-        console.log(folder._title);
+        //console.log(folder._title);
         if (folder._title === `${selectedOption}`) {
             folder.open(); // Expand the selected folder
         } else {
