@@ -8,8 +8,9 @@ import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import 
 import toneMappingLinear from './toneMappingLinear.js';
 //import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
+import toneMappingLuminance from './toneMappingLuminance.js'
 
-const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended]; // Add more tone mapping methods here
+const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended, toneMappingLuminance]; // Add more tone mapping methods here
 
 // Parameters for GUI
 const params = {
@@ -108,8 +109,8 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     //toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
     //toneMappingReinhardExtended.updateParameterConfig("L_white", 0, L.max*2, L.max);
     //console.log(toneMappingFolder.folders);
-    // Find the corresponding folder in the GUI
-    const folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
+    // Find the Reinhard Folder
+    var folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
     if (folder) {
         // Find the controller for the parameter based on its name
         const controller = folder.controllers.find(ctrl => ctrl._name === "L White");
@@ -117,6 +118,18 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
             // Update the GUI display
             //controller.max(L.max*2);
             //controller.updateDisplay();
+        } else console.log("NOT FOUND");
+    }
+    // Find the Luminance Folder
+    toneMappingLuminance.updateParameterValue("Max_L", L.max);
+    folder = toneMappingFolder.folders.find(f => f._title === "Luminance");
+    if (folder) {
+        // Find the controller for the parameter based on its name
+        const controller = folder.controllers.find(ctrl => ctrl._name === "Max Luminance");
+        if (controller) {
+            // Update the GUI display
+            controller.max(L.max);
+            controller.updateDisplay();
         } else console.log("NOT FOUND");
     }
    
