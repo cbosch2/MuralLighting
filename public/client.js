@@ -121,15 +121,15 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
         } else console.log("NOT FOUND");
     }
     // Find the Luminance Folder
-    toneMappingLuminance.updateParameterValue("Max_L", L.max);
+    //toneMappingLuminance.updateParameterValue("Max_L", L.max);
     folder = toneMappingFolder.folders.find(f => f._title === "Luminance");
     if (folder) {
         // Find the controller for the parameter based on its name
         const controller = folder.controllers.find(ctrl => ctrl._name === "Max Luminance");
         if (controller) {
             // Update the GUI display
-            controller.max(L.max);
-            controller.updateDisplay();
+      //      controller.max(L.max);
+      //      controller.updateDisplay();
         } else console.log("NOT FOUND");
     }
    
