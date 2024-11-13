@@ -1,20 +1,10 @@
-import ToneMappingFunction from './toneMappingFunction.js';   
+import ToneMappingFunction from './toneMappingFunction.js';
+import readTextFile from './shaderReader.js'; 
 
-var shaderCode = `
-    uniform float maxInputLuminance; // provided by the application
-    uniform float avgInputLuminance; // provided by the application        
-    uniform float exposure; 
-    
-    vec3 CustomToneMapping( vec3 color ) 
-    {
-        color *= (65535. / avgInputLuminance);
-        color *= exposure; 
-        return color;
-    }
-    `
+var shaderCode = await readTextFile("shaders/linear.glsl");
 
 var shaderParameters = {
-    "exposure": { min: 0.0, max: 1000.0, value: 30, name: "Exposure" },
+    "exposure": { min: 0.0, max: 10.0, value: 1, name: "Exposure" },
 };
 
 const toneMappingLinear = new ToneMappingFunction("Linear", shaderCode, shaderParameters);
