@@ -351,13 +351,6 @@ function updateToneMapping() {
 }
 
 
-function syncCameraViews(sourceControls, targetCamera, targetControls) {
-    targetCamera.position.copy(sourceControls.object.position);
-    targetCamera.quaternion.copy(sourceControls.object.quaternion);
-    targetControls.target.copy(sourceControls.target);
-    targetCamera.updateProjectionMatrix();
-}
-
 // Handle window resizing
 window.addEventListener('resize', function () {
     camera.aspect = container1.clientWidth / container1.clientHeight;
