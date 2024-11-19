@@ -109,19 +109,32 @@ const FS = `
     `
 //DIFFERENCE
 
+// Reference the existing dialog and close button
+const dialog = document.getElementById('dialog'); // Dialog container
+const closeDialogButton = document.querySelector('.close-button'); // Close button inside dialog
 
+// Function to open the dialog
+function openDialog() {
+    // Display the dialog and hide everything else in the background
+    dialog.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Disable scrolling on the background
+}
 
+// Function to close the dialog
+function closeDialog() {
+    dialog.style.display = 'none'; // Hide the dialog
+    document.body.style.overflow = 'auto'; // Re-enable scrolling
+}
 
+// Add functionality to close the dialog
+closeDialogButton.addEventListener('click', closeDialog);
 
-
-
-
-
-
-
-
-
-
+// Optional: Close the dialog by clicking outside the content
+dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) {
+        closeDialog();
+    }
+});
 
 
 
@@ -293,11 +306,11 @@ exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
 });
 
 
-
 // Create a GUI for tone mapping
 const gui = new GUI();
 gui.add(params, 'syncViews').name('Sync Views');
 gui.add(params, 'selectedTarget', { 'Both Windows': 'both', 'Window 1': 'window1', 'Window 2': 'window2' }).name('Apply To');
+gui.add({ openDialog: () => openDialog() }, 'openDialog').name('Difference');
 
 const toneMappingFolder = gui.addFolder( 'Tone Mapping' );
 

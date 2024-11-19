@@ -14,6 +14,44 @@
             width: 50%;  /* Each window takes half the screen width */
             height: 100vh;  /* Full height */
         }
+        .dialog {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 1); /* Solid black background */
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        pointer-events: all; /* Ensures only dialog elements are clickable */
+        }
+
+        .dialog-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 300px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto; /* Scrollbars if content overflows */
+            position: relative;
+            z-index: 1001; /* Ensures the dialog content is above the black background */
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+
     </style>
 
     <!-- Import maps polyfill -->
@@ -36,6 +74,14 @@
         <div id="differenceView" style="width: 400px; height: 400px;"></div>
         <button onclick="closeDifferenceDialog()">Close</button>
     </dialog>
+
+    <!-- Dialog for displaying content -->
+    <div id="dialog" class="dialog">
+        <div class="dialog-content">
+            <span id="closeDialog" class="close-button">&times;</span>
+            <p>This is a centered dialog. The background is hidden.</p>
+        </div>
+    </div>
 
     <script type="module" src="client.js"></script>
 </body>
