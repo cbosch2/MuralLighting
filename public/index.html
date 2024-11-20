@@ -70,18 +70,20 @@
     <div id="window2" class="threejs-window"></div>
 
      <!-- Dialog for difference view -->
-     <dialog id="differenceDialog">
-        <div id="differenceView" style="width: 400px; height: 400px;"></div>
-        <button onclick="closeDifferenceDialog()">Close</button>
+     <dialog id="differenceDialog" class="dialog">
+        <div id="differenceView" style="width: 400px; height: 400px;" class="dialog-content">
+            <span id="closeDialog" class="close-button">&times;</span>
+            <div id="winDiff" class="threejs-window"></div>
+        </div>
     </dialog>
 
     <!-- Dialog for displaying content -->
-    <div id="dialog" class="dialog">
+    <!--<div id="dialog" class="dialog">
         <div class="dialog-content">
             <span id="closeDialog" class="close-button">&times;</span>
             <p>This is a centered dialog. The background is hidden.</p>
         </div>
-    </div>
+    </div>-->
 
     <script type="module" src="client.js"></script>
 </body>

@@ -46,13 +46,25 @@ const camera2 = new THREE.PerspectiveCamera(75, container2.clientWidth / contain
 camera2.position.z = 2;
 
 
+//THIRD
+const renderer3 = new THREE.WebGLRenderer();
+const container3 = document.getElementById('winDiff');
+renderer3.setSize(container3.clientWidth, container3.clientHeight);
+container2.appendChild(renderer3.domElement);
+const scene3 = new THREE.Scene();
+const camera3 = new THREE.PerspectiveCamera(75, container3.clientWidth / container3.clientHeight, 0.1, 100);
+camera3.position.z = 2;
+
+
 
 // Set up Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 const controls2 = new OrbitControls(camera2, renderer2.domElement);
+const controls3 = new OrbitControls(camera3, renderer3.domElement);
 
 controls.enableRotate = false;
 controls2.enableRotate = false;
+controls3.enableRotate = false;
 
 controls.mouseButtons = {
 	LEFT: THREE.MOUSE.PAN,
@@ -60,6 +72,12 @@ controls.mouseButtons = {
 	RIGHT: THREE.MOUSE.PAN
 }
 controls2.mouseButtons = {
+	LEFT: THREE.MOUSE.PAN,
+	MIDDLE: THREE.MOUSE.DOLLY,
+	RIGHT: THREE.MOUSE.PAN
+}
+
+controls3.mouseButtons = {
 	LEFT: THREE.MOUSE.PAN,
 	MIDDLE: THREE.MOUSE.DOLLY,
 	RIGHT: THREE.MOUSE.PAN
@@ -110,7 +128,7 @@ const FS = `
 //DIFFERENCE
 
 // Reference the existing dialog and close button
-const dialog = document.getElementById('dialog'); // Dialog container
+const dialog = document.getElementById('differenceDialog'); // Dialog container
 const closeDialogButton = document.querySelector('.close-button'); // Close button inside dialog
 
 // Function to open the dialog
@@ -118,6 +136,12 @@ function openDialog() {
     // Display the dialog and hide everything else in the background
     dialog.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Disable scrolling on the background
+
+    //TODO: Create plane with material and the shaders
+    //The shader mast huve two texture as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
+    //then be able to compute the difference.
+
+
 }
 
 // Function to close the dialog
@@ -135,8 +159,6 @@ dialog.addEventListener('click', (event) => {
         closeDialog();
     }
 });
-
-
 
 
 exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
