@@ -140,7 +140,7 @@ function openDialog() {
     //TODO: Create plane with material and the shaders
     //The shader mast huve two texture as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
     //then be able to compute the difference.
-    difWin.animate();
+    difWin.show(container3.clientWidth, container3.clientHeight);
 
 }
 

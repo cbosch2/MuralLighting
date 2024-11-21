@@ -34,7 +34,8 @@ class DifferenceWindow {
         this.scene.add(this.mesh);
     }
 
-    animate() {
+    show(width, height) {
+        console.log("Width Diff ", width, " Heigh Diff ", height)
         this.renderer.render(this.scene, this.camera);
     }
 
