@@ -9,6 +9,8 @@ import toneMappingLinear from './toneMappingLinear.js';
 //import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 import toneMappingLuminance from './toneMappingLuminance.js'
+import DifferenceWindow from './differenceWindow.js';
+import readTextFile from './shaderReader.js'; 
 
 const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended, toneMappingLuminance]; // Add more tone mapping methods here
 
@@ -47,20 +49,18 @@ camera2.position.z = 2;
 
 
 //THIRD
-const renderer3 = new THREE.WebGLRenderer();
 const container3 = document.getElementById('winDiff');
-renderer3.setSize(container3.clientWidth, container3.clientHeight);
-container2.appendChild(renderer3.domElement);
-const scene3 = new THREE.Scene();
-const camera3 = new THREE.PerspectiveCamera(75, container3.clientWidth / container3.clientHeight, 0.1, 100);
-camera3.position.z = 2;
-
+var vs = await readTextFile("shaders/vs_difference.glsl");
+var fs = await readTextFile("shaders/fs_difference.glsl");
+var difWin = new DifferenceWindow(container3.clientWidth, container3.clientHeight, vs, fs)
+difWin.renderer.setSize(container3.clientWidth, container3.clientHeight);
+container3.appendChild(difWin.renderer.domElement);
 
 
 // Set up Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 const controls2 = new OrbitControls(camera2, renderer2.domElement);
-const controls3 = new OrbitControls(camera3, renderer3.domElement);
+const controls3 = new OrbitControls(difWin.camera, difWin.renderer.domElement);
 
 controls.enableRotate = false;
 controls2.enableRotate = false;
@@ -140,7 +140,7 @@ function openDialog() {
     //TODO: Create plane with material and the shaders
     //The shader mast huve two texture as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
     //then be able to compute the difference.
-
+    difWin.animate();
 
 }
 
