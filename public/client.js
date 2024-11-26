@@ -14,6 +14,10 @@ import readTextFile from './shaderReader.js';
 
 const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended, toneMappingLuminance]; // Add more tone mapping methods here
 
+//Create the color ops chunk
+var colorOpsGLSL = await readTextFile("shaders/colorOperations.glsl");
+THREE.ShaderChunk.ColorOps = colorOpsGLSL;
+
 // Parameters for GUI
 const params = {
     toneMappingMethodName: toneMappingMethods[0].name, // Default tone mapping method
@@ -162,6 +166,9 @@ dialog.addEventListener('click', (event) => {
 
 
 exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
+    //update texture in dialog window
+    difWin.leftTexture = texture;
+
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
     const aspectRatio = width / height;   // 1.777
@@ -287,6 +294,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
 //     console.error('An error occurred while loading the second EXR texture:', error);
 // });
 exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
+    //update texture in dialog window
+    difWin.rightTexture = texture;
+
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
     const aspectRatio = width / height;   // 1.777

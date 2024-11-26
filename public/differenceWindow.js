@@ -1,5 +1,12 @@
 /* This moduel provide a class to encapsulate the widget where we show luminance differences between two images */
 
+/**** TODO's
+ * [] Change the shader two show the difference as a diverging color map (such as seismic or bwr)
+ * [] Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio
+ * [] Make it responsive -> if window changes size's of dialog and canvas are incorrect.
+ * ------------------------------------------- 
+ */
+
 import * as THREE from 'three';
 
 class DifferenceWindow {
@@ -9,17 +16,20 @@ class DifferenceWindow {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100);
         this.camera.position.z = 2;
+        this.leftTexture = null;
+        this.rightTexture = null;
+        this.uMaxDelta = 0;
 
         this.material = new  THREE.ShaderMaterial({
             uniforms: {
-                //uTexture: { type: 't', value: texture }, // Add the texture as a uniform
+                uLeftTexture: { type: 't', value: this.leftTexture }, // Add the texture as a uniform
+                uRightTexture: { type: 't', value: this.rightTexture }, // Add the texture as a uniform
+                uMaxDelta: { value: () => this.uMaxDelta },
             },
             toneMapped: false,
             vertexShader: VS,
             fragmentShader: FS
         });
-        this.material.originalFragmentShader = this.material.fragmentShader;
-        this.material.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + this.material.originalFragmentShader;
         
         // Create a plane geometry for displaying the image
         const aspectRatio = 2;//TODO compute it depending on the texture...
@@ -33,10 +43,17 @@ class DifferenceWindow {
         this.scene.add(this.mesh);
     }
 
-   /**
-    * Show the dialog and update the scene and camera
-    */
+    /**
+     * Show the dialog and update the scene and camera
+     */
     show(width, height) {
+        //update texture's, the are changed in client.js when loading them
+        this.material.uniforms.uLeftTexture.value = this.leftTexture;
+        this.material.uniforms.uRightTexture.value = this.rightTexture;
+        this.uMaxDelta = this.computeMaxDelta();
+        this.material.uniforms.uMaxDelta.value = this.uMaxDelta;
+        this.material.needsUpdate = true;
+
         //update renderer size
         this.renderer.setSize(width, height);
 
@@ -50,9 +67,9 @@ class DifferenceWindow {
         this.startRendering();
     }
 
-   /**
-    * Hide the dialog and stop rendering
-    */
+    /**
+     * Hide the dialog and stop rendering
+     */
     stop() {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
@@ -60,16 +77,52 @@ class DifferenceWindow {
           }
     }
 
-   /**
-    * Start rendering the scene
-    */
+    /**
+     * Start rendering the scene
+     */
     startRendering() {
-    const renderLoop = () => {
-      this.renderer.render(this.scene, this.camera);
-      this.animationFrameId = requestAnimationFrame(renderLoop);
-    };
-    this.animationFrameId = requestAnimationFrame(renderLoop);
-  }
+        const renderLoop = () => {
+            this.renderer.render(this.scene, this.camera);
+            this.animationFrameId = requestAnimationFrame(renderLoop);
+        };
+        this.animationFrameId = requestAnimationFrame(renderLoop);
+    }
+
+    /**
+     * Estimate the max luminance delta between both images
+     */
+    computeMaxDelta() {
+        // Calculate luminance using the CIE XYZ 1931 sRGB D65
+        const computeLuminance = (r, g, b) => 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
+
+        const lArr = this.leftTexture.source.data.data; // Assuming this is a flat array
+        const rArr = this.rightTexture.source.data.data;
+
+        // Iterate over the RGBA arrays in chunks of 4 (r, g, b, a)
+        const stats = lArr.reduce((result, _, i) => {
+            if (i % 4 !== 0) return result; // Skip indices that aren't the start of an RGBA set
+
+            const r1 = lArr[i], g1 = lArr[i + 1], b1 = lArr[i + 2]; // Left texture RGB
+            const r2 = rArr[i], g2 = rArr[i + 1], b2 = rArr[i + 2]; // Right texture RGB
+
+            const luminance1 = computeLuminance(r1, g1, b1);
+            const luminance2 = computeLuminance(r2, g2, b2);
+            const difference = Math.abs(luminance1 - luminance2);
+
+            result.sum += difference;
+            result.count += 1;
+            result.max = Math.max(result.max, difference); // Update maxDiff
+
+            return result;
+        }, {
+            sum: 0,
+            count: 0,
+            max: 0
+        });
+
+
+        return stats.sum / stats.count;
+    }
 }
 
 export default DifferenceWindow
