@@ -52,7 +52,7 @@ camera2.position.z = 2;
 const container3 = document.getElementById('winDiff');
 var vs = await readTextFile("shaders/vs_difference.glsl");
 var fs = await readTextFile("shaders/fs_difference.glsl");
-var difWin = new DifferenceWindow(container3.clientWidth, container3.clientHeight, vs, fs)
+var difWin = new DifferenceWindow(vs, fs)
 difWin.renderer.setSize(container3.clientWidth, container3.clientHeight);
 container3.appendChild(difWin.renderer.domElement);
 
