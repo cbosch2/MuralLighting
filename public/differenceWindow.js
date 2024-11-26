@@ -1,7 +1,8 @@
 /* This moduel provide a class to encapsulate the widget where we show luminance differences between two images */
 
 /**** TODO's
- * [] Change the shader two show the difference as a diverging color map (such as seismic or bwr)
+ * [] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
+ * [] The Control pannels should be collapsed when the dialog opened, and extended when the dialog closed. Changes TBD in client.js.
  * [] Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio
  * [] Make it responsive -> if window changes size's of dialog and canvas are incorrect.
  * ------------------------------------------- 
