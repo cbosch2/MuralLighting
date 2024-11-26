@@ -9,8 +9,14 @@ import toneMappingLinear from './toneMappingLinear.js';
 //import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 import toneMappingLuminance from './toneMappingLuminance.js'
+import DifferenceWindow from './differenceWindow.js';
+import readTextFile from './shaderReader.js'; 
 
 const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended, toneMappingLuminance]; // Add more tone mapping methods here
+
+//Create the color ops chunk
+var colorOpsGLSL = await readTextFile("shaders/colorOperations.glsl");
+THREE.ShaderChunk.ColorOps = colorOpsGLSL;
 
 // Parameters for GUI
 const params = {
@@ -47,20 +53,18 @@ camera2.position.z = 2;
 
 
 //THIRD
-const renderer3 = new THREE.WebGLRenderer();
 const container3 = document.getElementById('winDiff');
-renderer3.setSize(container3.clientWidth, container3.clientHeight);
-container2.appendChild(renderer3.domElement);
-const scene3 = new THREE.Scene();
-const camera3 = new THREE.PerspectiveCamera(75, container3.clientWidth / container3.clientHeight, 0.1, 100);
-camera3.position.z = 2;
-
+var vs = await readTextFile("shaders/vs_difference.glsl");
+var fs = await readTextFile("shaders/fs_difference.glsl");
+var difWin = new DifferenceWindow(vs, fs)
+difWin.renderer.setSize(container3.clientWidth, container3.clientHeight);
+container3.appendChild(difWin.renderer.domElement);
 
 
 // Set up Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 const controls2 = new OrbitControls(camera2, renderer2.domElement);
-const controls3 = new OrbitControls(camera3, renderer3.domElement);
+const controls3 = new OrbitControls(difWin.camera, difWin.renderer.domElement);
 
 controls.enableRotate = false;
 controls2.enableRotate = false;
@@ -140,7 +144,7 @@ function openDialog() {
     //TODO: Create plane with material and the shaders
     //The shader mast huve two texture as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
     //then be able to compute the difference.
-
+    difWin.show(container3.clientWidth, container3.clientHeight);
 
 }
 
@@ -162,6 +166,9 @@ dialog.addEventListener('click', (event) => {
 
 
 exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
+    //update texture in dialog window
+    difWin.leftTexture = texture;
+
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
     const aspectRatio = width / height;   // 1.777
@@ -287,6 +294,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
 //     console.error('An error occurred while loading the second EXR texture:', error);
 // });
 exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
+    //update texture in dialog window
+    difWin.rightTexture = texture;
+
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
     const aspectRatio = width / height;   // 1.777
