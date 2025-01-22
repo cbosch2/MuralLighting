@@ -64,6 +64,7 @@ magmaColors.forEach((hex, i) => {
     colorArray[i * 3] = color.r;
     colorArray[i * 3 + 1] = color.g;
     colorArray[i * 3 + 2] = color.b;
+    //console.log(color.r+" "+color.g+" "+color.b);
 });
 
 // Create a texture for the colormap
@@ -75,8 +76,6 @@ const colorMapTexture = new THREE.DataTexture(
     THREE.FloatType
 );
 colorMapTexture.needsUpdate = true;
-
-//toneMappingLuminance.parameters.colorMap.value = colorMapTexture; // Assign the colormap
 
 
 //Create the color ops chunk
@@ -300,7 +299,7 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
             maxInputLuminance: { value: () => maxInputLuminance },
             avgInputLuminance: { value: () => avgInputLuminance },
             avg_L_w:           { value: () => logAvgInputLuminance },
-            colorMap:          { value: () => colorMapTexture}
+            uColorMap:          { type: 't', value: colorMapTexture}
         },
         toneMapped: false,
         vertexShader: VS,
@@ -381,6 +380,7 @@ exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
             maxInputLuminance: { value: () => maxInputLuminance },
             avgInputLuminance: { value: () => avgInputLuminance },
             avg_L_w:           { value: () => logAvgInputLuminance },
+            uColorMap:          { type: 't', value: colorMapTexture}
         },
         toneMapped: false,
         vertexShader: VS,
