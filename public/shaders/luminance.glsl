@@ -18,7 +18,7 @@ vec3 CustomToneMapping( vec3 color ) {
 
     // Map normalized luminance to the colormap (using a fixed vertical coordinate of 0.5)
     vec3 mappedColor = texture(uColorMap, vec2(norm_lum, 0.5)).rgb;
-    mappedColor = texture(uColorMap, vec2(x, y)).rgb;
+    //mappedColor = texture(uColorMap, vec2(x, y)).rgb;
 
     /*
     mappedColor *= (1. / 0.00007817795498173835);
@@ -31,11 +31,3 @@ vec3 CustomToneMapping( vec3 color ) {
 
     return mappedColor;
 }
-
-
-
-/*
-vec3 CustomToneMapping(vec3 color) {
-    return texture(uColorMap, vec2(gl_FragCoord.x / 800.0, gl_FragCoord.y / 800.0)).rgb;
-}
-*/
