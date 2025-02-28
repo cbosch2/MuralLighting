@@ -1,4 +1,4 @@
-/* This moduel provide a class to encapsulate the widget where we show luminance differences between two images */
+/* This module provides a class to encapsulate the widget where we show luminance differences between two images */
 
 /**** TODO's
  * [] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
@@ -20,12 +20,14 @@ class DifferenceWindow {
         this.leftTexture = null;
         this.rightTexture = null;
         this.uMaxDelta = 0;
+        this.colorMap = null;
 
-        this.material = new  THREE.ShaderMaterial({
+        this.material = new THREE.ShaderMaterial({
             uniforms: {
                 uLeftTexture: { type: 't', value: this.leftTexture }, // Add the texture as a uniform
                 uRightTexture: { type: 't', value: this.rightTexture }, // Add the texture as a uniform
                 uMaxDelta: { value: () => this.uMaxDelta },
+                uColorMap: { type: 't', value: this.colorMap }, // Add the texture as a uniform
             },
             toneMapped: false,
             vertexShader: VS,
@@ -48,11 +50,13 @@ class DifferenceWindow {
      * Show the dialog and update the scene and camera
      */
     show(width, height) {
-        //update texture's, the are changed in client.js when loading them
+        //update textures, they are changed in client.js when loading them
         this.material.uniforms.uLeftTexture.value = this.leftTexture;
+        
         this.material.uniforms.uRightTexture.value = this.rightTexture;
         this.uMaxDelta = this.computeMaxDelta();
         this.material.uniforms.uMaxDelta.value = this.uMaxDelta;
+        this.material.uniforms.uColorMap.value = this.colorMap;
         this.material.needsUpdate = true;
 
         //update renderer size
