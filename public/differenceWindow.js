@@ -19,15 +19,20 @@ class DifferenceWindow {
         this.camera.position.z = 2;
         this.leftTexture = null;
         this.rightTexture = null;
-        this.uMaxDelta = 0;
         this.colorMap = null;
+        this.uMaxDelta = 0;
+        this.uMaxDeltaWeight = 0;
+        this.uImgOverlay = 0;
+        this.uMaxLum = 0;
 
         this.material = new THREE.ShaderMaterial({
             uniforms: {
                 uLeftTexture: { type: 't', value: this.leftTexture }, // Add the texture as a uniform
                 uRightTexture: { type: 't', value: this.rightTexture }, // Add the texture as a uniform
-                uMaxDelta: { value: () => this.uMaxDelta },
                 uColorMap: { type: 't', value: this.colorMap }, // Add the texture as a uniform
+                uMaxDelta: { value: () => this.uMaxDelta },
+                uImgOverlay: { value: () => this.uImgOverlay },
+                uMaxLum: { value: () => this.uMaxLum },
             },
             toneMapped: false,
             vertexShader: VS,
@@ -49,14 +54,18 @@ class DifferenceWindow {
     /**
      * Show the dialog and update the scene and camera
      */
-    show(width, height) {
+    show(width, height, recompute = true) {
         //update textures, they are changed in client.js when loading them
-        this.material.uniforms.uLeftTexture.value = this.leftTexture;
-        this.material.uniforms.uRightTexture.value = this.rightTexture;
-        this.uMaxDelta = this.computeMaxDelta();
-        this.material.uniforms.uMaxDelta.value = this.uMaxDelta;
-        this.material.uniforms.uColorMap.value = this.colorMap;
-        this.material.needsUpdate = true;
+        if (recompute) {
+            this.material.uniforms.uLeftTexture.value = this.leftTexture;
+            this.material.uniforms.uRightTexture.value = this.rightTexture;
+            this.material.uniforms.uColorMap.value = this.colorMap;
+            this.uMaxDelta = this.computeMaxDelta();
+            this.material.uniforms.uMaxDelta.value = this.uMaxDelta * this.uMaxDeltaWeight;
+            this.material.uniforms.uImgOverlay.value = this.uImgOverlay;
+            this.material.uniforms.uMaxLum.value = this.uMaxDelta;   // TODO: should be max luminance, not delta
+            this.material.needsUpdate = true;
+        }
 
         //update renderer size
         this.renderer.setSize(width, height);
@@ -126,30 +135,31 @@ class DifferenceWindow {
             max: 0
         });
 
-        const avgDelta = stats.sum / stats.count;
-        const varDelta = stats.sum2 / stats.count - avgDelta * avgDelta;
-        const stdDevDelta = Math.sqrt(varDelta);
-        // const max2 = avgDelta + stdDevDelta * 3;    // w/o outliers 
-        const max2 = avgDelta + stdDevDelta;        // w/o outliers 
+        const avg = stats.sum / stats.count;
+        const stdDev = Math.sqrt(stats.sum2 / stats.count - avgDelta * avgDelta);
+        // const max2 = avg + stdDev * 3;    // w/o outliers 
+        const max2 = avg + stdDev;        // w/o outliers 
 
         console.log('Max Delta:', stats.max,
-                    '\nAvg Delta:', avgDelta,
-                    '\nStdDev Delta:', stdDevDelta,
+                    '\nAvg Delta:', avg,
+                    '\nStdDev Delta:', stdDev,
                     '\nMax Delta 2:', max2);
 
         // return stats.sum / stats.count;      // avg delta
-        // return stats.max;
-        return max2;
+        // return stats.max;                    // max delta
+        return max2;                            // modified max delta
     }
 
     /**
-     * Update max luminance delta and re-render 
+     * Update difference parameters 
      */
-    updateMaxDelta(maxDelta) {
-        // this.material.uniforms.uMaxDelta.value = maxDelta;
-        this.material.uniforms.uMaxDelta.value = maxDelta * this.uMaxDelta;     // scales max value instead of replacing it
-    }
+    updateDiffParams(maxDeltaWeight, imgOverlay) {
+        this.uMaxDeltaWeight = maxDeltaWeight;
+        this.uImgOverlay = imgOverlay;
 
+        this.material.uniforms.uMaxDelta.value = this.uMaxDelta * maxDeltaWeight;     // weighted max value
+        this.material.uniforms.uImgOverlay.value = imgOverlay;
+    }
 }
 
 export default DifferenceWindow

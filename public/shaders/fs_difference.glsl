@@ -2,8 +2,10 @@
 
 uniform sampler2D uLeftTexture;
 uniform sampler2D uRightTexture;
-uniform float uMaxDelta;
 uniform sampler2D uColorMap;    // colormap (treated as 2D texture)
+uniform float uMaxDelta;
+uniform float uImgOverlay;   // left image overlay (weight)
+uniform float uMaxLum;       // max luminance for the overlayed luminance       
 varying vec2 vUv;
 
 void main() {
@@ -22,7 +24,11 @@ void main() {
  
     // Map difference to the colormap (using a fixed vertical coordinate of 0.5)
     vec3 color = texture(uColorMap, vec2(delta, 0.5)).rgb;
-    gl_FragColor = vec4(color, 1.0); 
+
+    // Overlay with left image (luminance one)
+    color = uImgOverlay * clamp(lLum / uMaxLum, 0., 1.) + (1.f - uImgOverlay) * color;
+
+    gl_FragColor = vec4(color, 1.0);
 
     //if (delta>0.9)
     //    gl_FragColor = vec4(1,0,0,1);

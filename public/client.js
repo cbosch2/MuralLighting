@@ -50,7 +50,8 @@ const params = {
     toneMappingMethodName: toneMappingMethods[0].name, // Default tone mapping method
     syncViews : true,
     selectedTarget: 'both',
-    maxDiff : 1.0
+    maxDiff : 1.0,
+    imgOverlay : 0.0,
 };
 let syncing = false;
 
@@ -161,6 +162,7 @@ const FS = `
 // Reference the existing dialog and close button
 const dialog = document.getElementById('differenceDialog'); // Dialog container
 const closeDialogButton = document.querySelector('.close-button'); // Close button inside dialog
+let recomputeDiff = true;
 
 // Function to open the dialog
 function openDialog() {
@@ -168,10 +170,15 @@ function openDialog() {
     dialog.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Disable scrolling on the background
 
+    // First update parameters
+    difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
+
     //TODO: Create plane with material and the shaders
     //The shader must have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
     //then be able to compute the difference.
-    difWin.show(container3.clientWidth, container3.clientHeight);
+    difWin.show(container3.clientWidth, container3.clientHeight, recomputeDiff);
+
+    recomputeDiff = false;  // to reopen dialog faster
 }
 
 // Function to close the dialog
@@ -191,8 +198,8 @@ dialog.addEventListener('click', (event) => {
 });
 
 // update max delta value (using GUI control)
-function updateMaxDiff() {
-    difWin.updateMaxDelta(params.maxDiff);
+function updateDiffParams() {
+    difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
 }
 
 
@@ -413,7 +420,8 @@ updateFolders(params.toneMappingMethodName);
 // Image difference
 const imgDiffFolder = gui.addFolder('Image Difference');
 imgDiffFolder.add({ openDialog: () => openDialog() }, 'openDialog').name('Show Difference');
-imgDiffFolder.add(params, 'maxDiff', 0.0001, 1.0).name('Max Difference').onChange((value) => updateMaxDiff());
+imgDiffFolder.add(params, 'maxDiff', 0.0001, 1.0).name('Max Difference').onChange((value) => updateDiffParams());
+imgDiffFolder.add(params, 'imgOverlay', 0.0, 1.0).name('Image Overlay').onChange((value) => updateDiffParams());
 
 
 // Function to collapse other TM folders and expand the selected one
