@@ -23,7 +23,7 @@ const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMap
 // const container1 = document.getElementById('window1');
 // const camera = new THREE.PerspectiveCamera(75, container1.clientWidth / container1.clientHeight, 0.1, 100);
 // camera.position.z = 2;
-
+// 
 // const renderer = new THREE.WebGLRenderer();
 // renderer.setSize(container1.clientWidth, container1.clientHeight);
 // container1.appendChild(renderer.domElement);
@@ -36,7 +36,7 @@ const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMap
 // });
 // const plane = new THREE.Mesh(new THREE.PlaneGeometry(3, 1), material);
 // scene.add(plane);
-
+// 
 // // Render
 // renderer.render(scene, camera);
 
@@ -49,8 +49,8 @@ THREE.ShaderChunk.ColorOps = colorOpsGLSL;
 const params = {
     toneMappingMethodName: toneMappingMethods[0].name, // Default tone mapping method
     syncViews : true,
-    selectedTarget: 'both'
-
+    selectedTarget: 'both',
+    maxDiff : 1.0
 };
 let syncing = false;
 
@@ -169,7 +169,7 @@ function openDialog() {
     document.body.style.overflow = 'hidden'; // Disable scrolling on the background
 
     //TODO: Create plane with material and the shaders
-    //The shader mast have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
+    //The shader must have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
     //then be able to compute the difference.
     difWin.show(container3.clientWidth, container3.clientHeight);
 }
@@ -189,6 +189,12 @@ dialog.addEventListener('click', (event) => {
         closeDialog();
     }
 });
+
+// update max delta value (using GUI control)
+function updateMaxDiff() {
+    difWin.updateMaxDelta(params.maxDiff);
+}
+
 
 
 exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
@@ -370,20 +376,24 @@ exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
 });
 
 
-// Create a GUI for tone mapping
+// Create the GUI
 const gui = new GUI();
+
+// Basic params
 gui.add(params, 'syncViews').name('Sync Views');
-gui.add(params, 'selectedTarget', { 'Both Windows': 'both', 'Window 1': 'window1', 'Window 2': 'window2' }).name('Apply To');
-gui.add({ openDialog: () => openDialog() }, 'openDialog').name('Difference');
 
-const toneMappingFolder = gui.addFolder( 'Tone Mapping' );
+// Tone mapping
+const toneMappingFolder = gui.addFolder('Tone Mapping');
+toneMappingFolder.add(params, 'selectedTarget', { 'Both Windows': 'both', 'Window 1': 'window1', 'Window 2': 'window2' }).name('Apply To');
 
-// Add tone mapping selection dropdown
+// Tone mapping selection dropdown
 var options = toneMappingMethods.map(method => method.name);
 toneMappingFolder.add(params, 'toneMappingMethodName', options).name('Tone mapping').onChange((value) => {
+    updateFolders(value);
     updateToneMapping();
 });
 
+// Specific params of each method
 for (let method of toneMappingMethods) {
     const folder = toneMappingFolder.addFolder(method.name);
     for (const [_, param] of Object.entries(method.parameters)) {
@@ -396,10 +406,17 @@ for (let method of toneMappingMethods) {
     }
 }
 
-toneMappingFolder.open();
-updateFolders(params.toneMappingMethodName)
+// toneMappingFolder.open();
+toneMappingFolder.close();
+updateFolders(params.toneMappingMethodName);
 
-// Function to collapse other folders and expand the selected one
+// Image difference
+const imgDiffFolder = gui.addFolder('Image Difference');
+imgDiffFolder.add({ openDialog: () => openDialog() }, 'openDialog').name('Show Difference');
+imgDiffFolder.add(params, 'maxDiff', 0.0001, 1.0).name('Max Difference').onChange((value) => updateMaxDiff());
+
+
+// Function to collapse other TM folders and expand the selected one
 function updateFolders(selectedOption) {
     //console.log(selectedOption);
     toneMappingFolder.folders.forEach(folder => {
@@ -412,6 +429,7 @@ function updateFolders(selectedOption) {
     });
 }
 
+// Apply selected method on the images
 function updateToneMapping() {
     const method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
 
@@ -451,7 +469,7 @@ function animate() {
     renderer.render(scene, camera);
     renderer2.render(scene2, camera2);
 }
-animate();
+// animate();
 
 function setToneMappingMethod(currentScene, method) {
     currentScene.traverse((object) => {

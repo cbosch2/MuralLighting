@@ -51,9 +51,6 @@ colors.forEach((color, i) => {
     data[stride] = Math.round(color.r * 255);     // Red
     data[stride + 1] = Math.round(color.g * 255); // Green
     data[stride + 2] = Math.round(color.b * 255); // Blue
-    // data[stride] = Math.round(i * 255);     // Red
-    // data[stride + 1] = Math.round(i * 255); // Green
-    // data[stride + 2] = Math.round(i * 255); // Blue
     data[stride + 3] = 255;                       // Alpha
 });
 

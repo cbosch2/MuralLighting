@@ -1,7 +1,7 @@
 /* This module provides a class to encapsulate the widget where we show luminance differences between two images */
 
 /**** TODO's
- * [] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
+ * [X] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
  * [] The Control pannels should be collapsed when the dialog opened, and extended when the dialog closed. Changes TBD in client.js.
  * [] Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio
  * [] Make it responsive -> if window changes size's of dialog and canvas are incorrect.
@@ -52,7 +52,6 @@ class DifferenceWindow {
     show(width, height) {
         //update textures, they are changed in client.js when loading them
         this.material.uniforms.uLeftTexture.value = this.leftTexture;
-        
         this.material.uniforms.uRightTexture.value = this.rightTexture;
         this.uMaxDelta = this.computeMaxDelta();
         this.material.uniforms.uMaxDelta.value = this.uMaxDelta;
@@ -115,19 +114,42 @@ class DifferenceWindow {
             const difference = Math.abs(luminance1 - luminance2);
 
             result.sum += difference;
+            result.sum2 += difference * difference;
             result.count += 1;
             result.max = Math.max(result.max, difference); // Update maxDiff
 
             return result;
         }, {
             sum: 0,
+            sum2: 0,
             count: 0,
             max: 0
         });
 
+        const avgDelta = stats.sum / stats.count;
+        const varDelta = stats.sum2 / stats.count - avgDelta * avgDelta;
+        const stdDevDelta = Math.sqrt(varDelta);
+        // const max2 = avgDelta + stdDevDelta * 3;    // w/o outliers 
+        const max2 = avgDelta + stdDevDelta;        // w/o outliers 
 
-        return stats.sum / stats.count;
+        console.log('Max Delta:', stats.max,
+                    '\nAvg Delta:', avgDelta,
+                    '\nStdDev Delta:', stdDevDelta,
+                    '\nMax Delta 2:', max2);
+
+        // return stats.sum / stats.count;      // avg delta
+        // return stats.max;
+        return max2;
     }
+
+    /**
+     * Update max luminance delta and re-render 
+     */
+    updateMaxDelta(maxDelta) {
+        // this.material.uniforms.uMaxDelta.value = maxDelta;
+        this.material.uniforms.uMaxDelta.value = maxDelta * this.uMaxDelta;     // scales max value instead of replacing it
+    }
+
 }
 
 export default DifferenceWindow
