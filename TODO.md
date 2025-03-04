@@ -1,7 +1,7 @@
 # Image Difference
 
 ## Difference
-- [ ] Detect geometry changes (using depth maps or other means)
+- [ ] Detect geometry changes? (using depth maps or other means)
 - [x] Adjust max difference value (+ change max computation)
 - [x] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
 - [x] Overlay with one of the original images
@@ -15,12 +15,19 @@
 - [ ] See how to integrate it with the main UI --> replace image instead of opening dialog?
 
 
+# Image Loading
+
+- [ ] ==Update images==
+- [ ] Solve bad tone mapping updating when loading right image
+- [ ] Unify EXR loaders + put on a separate file?
+
+
 # UI
 
-- [ ] Add image selection
+- [ ] Improve image selection
+- [x] Add image selection --> dropdowns for now
 - [x] Reorganize GUI
 
 
 # Others
 
-- [ ] ==Update images==

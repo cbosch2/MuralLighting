@@ -20,8 +20,10 @@ void main() {
     float rLum = rXYZ.y;
 
     // Compute difference (campled to 0..1)
-    float delta = clamp(abs(lLum-rLum) / uMaxDelta, 0., 1.);
- 
+    // float delta = clamp(abs(lLum-rLum) / uMaxDelta, 0., 1.);     // abs difference
+    float delta = (lLum-rLum) / uMaxDelta;      // std difference
+    delta = clamp(delta * 0.5 + 0.5, 0., 1.);   // map from -1..1 to 0..1
+
     // Map difference to the colormap (using a fixed vertical coordinate of 0.5)
     vec3 color = texture(uColorMap, vec2(delta, 0.5)).rgb;
 

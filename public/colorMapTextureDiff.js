@@ -33,14 +33,14 @@ function generateInterpolatedColors(color1, color2, color3, n) {
 const colorMapSize = 255;
 
 // Base colors (BWR colormap)
-// const color1 = "#0000ff";  // Blue
-// const color2 = "#ffffff";  // White
-// const color3 = "#ff0000";  // Red
-
-// Base colors (BYR colormap)
 const color1 = "#0000ff";  // Blue
-const color2 = "#ffffc5";  // Light Yellow
+const color2 = "#ffffff";  // White
 const color3 = "#ff0000";  // Red
+
+// // Base colors (BYR colormap)
+// const color1 = "#0000ff";  // Blue
+// const color2 = "#ffffc5";  // Light Yellow
+// const color3 = "#ff0000";  // Red
 
 // Generate color map by interpolation
 const colors = generateInterpolatedColors(color1, color2, color3, colorMapSize);

@@ -18,6 +18,7 @@ import colorMapTextureDiff from './colorMapTextureDiff.js';
 
 const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended, toneMappingLuminance]; // Add more tone mapping methods here
 
+
 // // Create the scene, camera, and renderer
 // const scene = new THREE.Scene();
 // const container1 = document.getElementById('window1');
@@ -45,16 +46,6 @@ const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMap
 var colorOpsGLSL = await readTextFile("shaders/colorOperations.glsl");
 THREE.ShaderChunk.ColorOps = colorOpsGLSL;
 
-// Parameters for GUI
-const params = {
-    toneMappingMethodName: toneMappingMethods[0].name, // Default tone mapping method
-    syncViews : true,
-    selectedTarget: 'both',
-    maxDiff : 1.0,
-    imgOverlay : 0.0,
-};
-let syncing = false;
-
 // Set up the renderer
 const renderer = new THREE.WebGLRenderer();
 const container1 = document.getElementById('window1');
@@ -79,7 +70,7 @@ const scene2 = new THREE.Scene();
 const camera2 = new THREE.PerspectiveCamera(75, container2.clientWidth / container2.clientHeight, 0.1, 100);
 camera2.position.z = 2;
 
-// THIRD
+// THIRD (Difference)
 const container3 = document.getElementById('winDiff');
 var vs = await readTextFile("shaders/vs_difference.glsl");
 var fs = await readTextFile("shaders/fs_difference.glsl");
@@ -87,7 +78,6 @@ var difWin = new DifferenceWindow(vs, fs)
 difWin.renderer.setSize(container3.clientWidth, container3.clientHeight);
 difWin.colorMap = colorMapTextureDiff;
 container3.appendChild(difWin.renderer.domElement);
-
 
 // Set up Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -132,13 +122,17 @@ var toneMappingDefaultShaderCode = THREE.ShaderChunk.tonemapping_pars_fragment;
 renderer.toneMapping = THREE.CustomToneMapping; 
 renderer.toneMappingExposure = 1.0; // Default exposure value
 
-// Load an EXR image
+
+///// EXR loading
+
 var maxInputLuminance = null;
 var avgInputLuminance = null;
 var logAvgInputLuminance = null;
 var material = null;
+
 const exrLoader = new EXRLoader();
 exrLoader.setDataType(THREE.FloatType); 
+
 const VS = `
       varying vec2 vUv;
   
@@ -157,54 +151,7 @@ const FS = `
       }
     `;
 
-// DIFFERENCE
-
-// Reference the existing dialog and close button
-const dialog = document.getElementById('differenceDialog'); // Dialog container
-const closeDialogButton = document.querySelector('.close-button'); // Close button inside dialog
-let recomputeDiff = true;
-
-// Function to open the dialog
-function openDialog() {
-    // Display the dialog and hide everything else in the background
-    dialog.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Disable scrolling on the background
-
-    // First update parameters
-    difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
-
-    //TODO: Create plane with material and the shaders
-    //The shader must have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
-    //then be able to compute the difference.
-    difWin.show(container3.clientWidth, container3.clientHeight, recomputeDiff);
-
-    recomputeDiff = false;  // to reopen dialog faster
-}
-
-// Function to close the dialog
-function closeDialog() {
-    dialog.style.display = 'none'; // Hide the dialog
-    document.body.style.overflow = 'auto'; // Re-enable scrolling
-}
-
-// Add functionality to close the dialog
-closeDialogButton.addEventListener('click', closeDialog);
-
-// Optional: Close the dialog by clicking outside the content
-dialog.addEventListener('click', (event) => {
-    if (event.target === dialog) {
-        closeDialog();
-    }
-});
-
-// update max delta value (using GUI control)
-function updateDiffParams() {
-    difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
-}
-
-
-
-exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
+function loadLeftImage(texture) {
     //toneMappingLuminance.parameters.uTexture.value = texture;
 
     //update texture in dialog window
@@ -265,11 +212,11 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
         const controller = folder.controllers.find(ctrl => ctrl._name === "Max Luminance");
         if (controller) {
             // Update the GUI display
-      //      controller.max(L.max);
-      //      controller.updateDisplay();
+        //      controller.max(L.max);
+        //      controller.updateDisplay();
         } else console.log("NOT FOUND");
     }
-   
+    
     // Create a material using the EXR texture
     material = new THREE.ShaderMaterial({
         uniforms: {
@@ -297,47 +244,9 @@ exrLoader.load('./textures/XII/Natural/pv2_c1.exr', function (texture) {
     scene.add(mesh);
 
     render(); // Initial render after the EXR texture has loaded
+}
 
-}, undefined, function (error) {
-    console.error('An error occurred while loading the EXR texture:', error);
-});
-
-// exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
-//     const width = texture.image.width;
-//     const height = texture.image.height;
-//     const aspectRatio = width / height;
-
-//     // Create a material using the EXR texture
-//     const material2 = new  THREE.ShaderMaterial({
-//         uniforms: {
-//             uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-//             maxInputLuminance: { value: () => maxInputLuminance*1.0 },
-//             avgInputLuminance: { value: () => avgInputLuminance*1.0 },
-//             avg_L_w:           { value: () => logAvgInputLuminance*1.0 },
-//         },
-//         toneMapped: false,
-//         vertexShader: VS,
-//         fragmentShader: FS
-//     });
-//     material2.originalFragmentShader = material2.fragmentShader;
-//     material2.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material.originalFragmentShader;
-
-//     // Create a plane geometry for the second EXR image
-//     const geometry2 = new THREE.PlaneGeometry(1.5 * aspectRatio, 1.5);
-
-//     // Create a mesh for the second image
-//     const mesh2 = new THREE.Mesh(geometry2, material2);
-//     //mesh2.position.x = 1.35; // Position it to the right side
-//     mesh2.position.set(0, 0, 0);
-//     // Add the second mesh to the scene
-//     scene2.add(mesh2);
-
-//     render(); // Render after the second EXR texture has loaded
-
-// }, undefined, function (error) {
-//     console.error('An error occurred while loading the second EXR texture:', error);
-// });
-exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
+function loadRightImage(texture) {
     //update texture in dialog window
     difWin.rightTexture = texture;
 
@@ -378,13 +287,39 @@ exrLoader.load('./textures/XII/Natural/pv2_c2.exr', function (texture) {
     scene2.add(mesh2);
 
     render(); // Initial render after the EXR texture has loaded
-}, undefined, function (error) {
-    console.error('An error occurred while loading the second EXR texture:', error);
-});
+}
 
+function loadingError(error) {
+    console.error('An error occurred while loading the EXR texture:', error);
+}
+
+// exrLoader.load('./textures/XII/Natural/pv2_c1.exr', loadLeftImage, undefined, loadingError);
+// exrLoader.load('./textures/XII/Natural/pv2_c2.exr', loadRightImage, undefined, loadingError);
+
+
+///// GUI
+
+// Parameters
+const params = {
+    leftImage : '',
+    rightImage : '',
+    syncViews : true,
+    selectedTarget: 'both',
+    toneMappingMethodName: toneMappingMethods[0].name, // Default tone mapping method
+    maxDiff : 1.0,
+    imgOverlay : 0.25,
+};
 
 // Create the GUI
 const gui = new GUI();
+
+// // Image selection (temporary)
+// const leftImageMenu = gui.add(params, 'leftImage').name('Left Image').onChange((value) => {
+//     exrLoader.load('./textures/' + value, loadLeftImage, undefined, loadingError);
+// });
+// const rightImageMenu = gui.add(params, 'rightImage').name('Right Image').onChange((value) => {
+//     exrLoader.load('./textures/' + value, loadRightImage, undefined, loadingError);
+// });
 
 // Basic params
 gui.add(params, 'syncViews').name('Sync Views');
@@ -417,10 +352,10 @@ for (let method of toneMappingMethods) {
 toneMappingFolder.close();
 updateFolders(params.toneMappingMethodName);
 
-// Image difference
+// Image difference params
 const imgDiffFolder = gui.addFolder('Image Difference');
 imgDiffFolder.add({ openDialog: () => openDialog() }, 'openDialog').name('Show Difference');
-imgDiffFolder.add(params, 'maxDiff', 0.0001, 1.0).name('Max Difference').onChange((value) => updateDiffParams());
+imgDiffFolder.add(params, 'maxDiff', 0.001, 1.0).name('Max Difference').onChange((value) => updateDiffParams());
 imgDiffFolder.add(params, 'imgOverlay', 0.0, 1.0).name('Image Overlay').onChange((value) => updateDiffParams());
 
 
@@ -437,6 +372,42 @@ function updateFolders(selectedOption) {
     });
 }
 
+
+///// Input images
+
+let images = [];
+
+fetch('/images')
+    .then(response => response.json()) // parse the response as JSON
+    .then(files => {
+        images = files;
+        // console.log(images);
+
+        // // Update GUI images' dropdowns
+        // leftImageMenu.setValue(images[0]);   // init image selection (+ load them)
+        // rightImageMenu.setValue(images[1]);
+        // leftImageMenu.options(images);       // update lists  // NOTE: this removes the callback and value sometimes
+        // rightImageMenu.options(images);
+
+        // Add image dropdowns + callbacks for loading (better doing this alltogether)
+        const leftImageMenu = gui.add(params, 'leftImage', images).name('Left Image').onChange((value) => {
+            exrLoader.load('./textures/' + value, loadLeftImage, undefined, loadingError);
+        });
+        const rightImageMenu = gui.add(params, 'rightImage', images).name('Right Image').onChange((value) => {
+            exrLoader.load('./textures/' + value, loadRightImage, undefined, loadingError);
+        });
+        
+        // Set initial images (+ load them)
+        leftImageMenu.setValue(images[0]);
+        rightImageMenu.setValue(images[1]);
+    })
+    .catch(error => {
+        console.error('Error fetching images: ', error);
+    });
+
+
+///// Rendering + Tone mapping
+
 // Apply selected method on the images
 function updateToneMapping() {
     const method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
@@ -452,7 +423,6 @@ function updateToneMapping() {
 
     render(); // Render the selected scenes
 }
-
 
 // Handle window resizing
 window.addEventListener('resize', function () {
@@ -531,6 +501,8 @@ function render() {
     renderer2.render(scene2, camera2);
 }
 
+let syncing = false;
+
 function syncCameraViews(sourceControls, targetCamera, targetControls) {
     if (!params.syncViews || syncing) return;
 
@@ -553,4 +525,52 @@ function syncCameraViews(sourceControls, targetCamera, targetControls) {
 
 // Start the animation loop
 animate();
+
+
+///// Image difference
+
+// Reference the existing dialog and close button
+const dialog = document.getElementById('differenceDialog'); // Dialog container
+const closeDialogButton = document.querySelector('.close-button'); // Close button inside dialog
+let recomputeDiff = true;
+
+// Function to open the dialog
+function openDialog() {
+    // Display the dialog and hide everything else in the background
+    dialog.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Disable scrolling on the background
+
+    // First update parameters
+    difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
+
+    //TODO: Create plane with material and the shaders
+    //The shader must have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
+    //then be able to compute the difference.
+    difWin.show(container3.clientWidth, container3.clientHeight, recomputeDiff);
+
+    recomputeDiff = false;  // to reopen dialog faster
+
+    console.log(images); // logs the list of file names
+}
+
+// Function to close the dialog
+function closeDialog() {
+    dialog.style.display = 'none'; // Hide the dialog
+    document.body.style.overflow = 'auto'; // Re-enable scrolling
+}
+
+// Add functionality to close the dialog
+closeDialogButton.addEventListener('click', closeDialog);
+
+// Optional: Close the dialog by clicking outside the content
+dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) {
+        closeDialog();
+    }
+});
+
+// update max delta value (using GUI control)
+function updateDiffParams() {
+    difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
+}
 

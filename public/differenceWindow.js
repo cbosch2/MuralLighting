@@ -136,7 +136,7 @@ class DifferenceWindow {
         });
 
         const avg = stats.sum / stats.count;
-        const stdDev = Math.sqrt(stats.sum2 / stats.count - avgDelta * avgDelta);
+        const stdDev = Math.sqrt(stats.sum2 / stats.count - avg * avg);
         // const max2 = avg + stdDev * 3;    // w/o outliers 
         const max2 = avg + stdDev;        // w/o outliers 
 
