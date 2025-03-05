@@ -1,116 +1,83 @@
-console.log("Hello World")
+console.log("Client started");
 
 import * as THREE from 'three';
 import { OrbitControls } from './jsm/controls/OrbitControls.js';
 import Stats from './jsm/libs/stats.module.js';
 import { GUI } from './jsm/libs/lil-gui.module.min.js'; // Import lil-gui for the exposure slider
 import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this loader
-import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
+// import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
 import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
 import toneMappingLinear from './toneMappingLinear.js';
 //import toneMappingLinearGamma from './toneMappingLinearGamma.js';
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 import toneMappingLuminance from './toneMappingLuminance.js'
+import ImageView from './imageView.js';
 import DifferenceWindow from './differenceWindow.js';
 import readTextFile from './shaderReader.js'; 
-import colorMapTexture from './colorMapTexture.js';
-import colorMapTextureDiff from './colorMapTextureDiff.js';
+// import colorMapTexture from './colorMapTexture.js';
+// import colorMapTextureDiff from './colorMapTextureDiff.js';
 
 const toneMappingMethods = [toneMappingLinear, toneMappingReinhardBasic, toneMappingReinhardExtended, toneMappingLuminance]; // Add more tone mapping methods here
 
 
-// // Create the scene, camera, and renderer
-// const scene = new THREE.Scene();
-// const container1 = document.getElementById('window1');
-// const camera = new THREE.PerspectiveCamera(75, container1.clientWidth / container1.clientHeight, 0.1, 100);
-// camera.position.z = 2;
-// 
-// const renderer = new THREE.WebGLRenderer();
-// renderer.setSize(container1.clientWidth, container1.clientHeight);
-// container1.appendChild(renderer.domElement);
-
-
-// // Create Material and Plane
-// const material = new THREE.MeshBasicMaterial({
-//     map: magmaTexture,
-//     side: THREE.DoubleSide
-// });
-// const plane = new THREE.Mesh(new THREE.PlaneGeometry(3, 1), material);
-// scene.add(plane);
-// 
-// // Render
-// renderer.render(scene, camera);
-
+///// Image Views
 
 // Create the color ops chunk
 var colorOpsGLSL = await readTextFile("shaders/colorOperations.glsl");
 THREE.ShaderChunk.ColorOps = colorOpsGLSL;
-
-// Set up the renderer
-const renderer = new THREE.WebGLRenderer();
-const container1 = document.getElementById('window1');
-renderer.setSize(container1.clientWidth, container1.clientHeight);
-container1.appendChild(renderer.domElement);
-
-// Create the scene
-const scene = new THREE.Scene();
 window.three = THREE; // For debugging
 
-// Set up the camera
-const camera = new THREE.PerspectiveCamera(75, container1.clientWidth / container1.clientHeight, 0.1, 100);
-camera.position.z = 2;
+// Left view
+const containerL = document.getElementById('window1');
+var leftView = new ImageView(containerL.clientWidth, containerL.clientHeight);
+containerL.appendChild(leftView.renderer.domElement);
 
-// SECOND
-const renderer2 = new THREE.WebGLRenderer();
-const container2 = document.getElementById('window2');
-renderer2.setSize(container2.clientWidth, container2.clientHeight);
-container2.appendChild(renderer2.domElement);
+// Right View
+const containerR = document.getElementById('window2');
+var rightView = new ImageView(containerR.clientWidth, containerR.clientHeight);
+containerR.appendChild(rightView.renderer.domElement);
 
-const scene2 = new THREE.Scene();
-const camera2 = new THREE.PerspectiveCamera(75, container2.clientWidth / container2.clientHeight, 0.1, 100);
-camera2.position.z = 2;
-
-// THIRD (Difference)
-const container3 = document.getElementById('winDiff');
+// Difference dialog
+const containerD = document.getElementById('winDiff');
 var vs = await readTextFile("shaders/vs_difference.glsl");
 var fs = await readTextFile("shaders/fs_difference.glsl");
 var difWin = new DifferenceWindow(vs, fs)
-difWin.renderer.setSize(container3.clientWidth, container3.clientHeight);
-difWin.colorMap = colorMapTextureDiff;
-container3.appendChild(difWin.renderer.domElement);
+difWin.renderer.setSize(containerD.clientWidth, containerD.clientHeight);
+containerD.appendChild(difWin.renderer.domElement);
 
 // Set up Orbit Controls
-const controls = new OrbitControls(camera, renderer.domElement);
-const controls2 = new OrbitControls(camera2, renderer2.domElement);
-const controls3 = new OrbitControls(difWin.camera, difWin.renderer.domElement);
+const controlsL = new OrbitControls(leftView.camera, leftView.renderer.domElement);
+const controlsR = new OrbitControls(rightView.camera, rightView.renderer.domElement);
+const controlsD = new OrbitControls(difWin.camera, difWin.renderer.domElement);
 
-controls.enableRotate = false;
-controls2.enableRotate = false;
-controls3.enableRotate = false;
+controlsL.enableRotate = false;
+controlsR.enableRotate = false;
+controlsD.enableRotate = false;
 
-controls.mouseButtons = {
-	LEFT: THREE.MOUSE.PAN,
-	MIDDLE: THREE.MOUSE.DOLLY,
-	RIGHT: THREE.MOUSE.PAN
-}
-controls2.mouseButtons = {
+controlsL.mouseButtons = {
 	LEFT: THREE.MOUSE.PAN,
 	MIDDLE: THREE.MOUSE.DOLLY,
 	RIGHT: THREE.MOUSE.PAN
 }
 
-controls3.mouseButtons = {
+controlsR.mouseButtons = {
 	LEFT: THREE.MOUSE.PAN,
 	MIDDLE: THREE.MOUSE.DOLLY,
 	RIGHT: THREE.MOUSE.PAN
 }
 
-controls.addEventListener('change', () => {
-    syncCameraViews(controls, camera2, controls2);
+controlsD.mouseButtons = {
+	LEFT: THREE.MOUSE.PAN,
+	MIDDLE: THREE.MOUSE.DOLLY,
+	RIGHT: THREE.MOUSE.PAN
+}
+
+controlsL.addEventListener('change', () => {
+    syncCameraViews(controlsL, rightView.camera, controlsR);
 });
 
-controls2.addEventListener('change', () => {
-    syncCameraViews(controls2, camera, controls);
+controlsR.addEventListener('change', () => {
+    syncCameraViews(controlsR, leftView.camera, controlsL);
 });
 
 // Initialize stats for performance monitoring
@@ -119,184 +86,83 @@ document.body.appendChild(stats.dom);
 
 // Tone mapping
 var toneMappingDefaultShaderCode = THREE.ShaderChunk.tonemapping_pars_fragment;
-renderer.toneMapping = THREE.CustomToneMapping; 
-renderer.toneMappingExposure = 1.0; // Default exposure value
+leftView.renderer.toneMapping = THREE.CustomToneMapping; 
+leftView.renderer.toneMappingExposure = 1.0; // Default exposure value
 
 
 ///// EXR loading
 
+// Luminance values used for tone mapping
 var maxInputLuminance = null;
 var avgInputLuminance = null;
 var logAvgInputLuminance = null;
-var material = null;
 
 const exrLoader = new EXRLoader();
 exrLoader.setDataType(THREE.FloatType); 
 
-const VS = `
-      varying vec2 vUv;
-  
-      void main() {
-        vUv = uv; // Pass UV coordinates to the fragment shader
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `;
-const FS = `
-      uniform sampler2D uTexture;
-      varying vec2 vUv;
-  
-      void main() {
-        vec4 textureColor = texture2D(uTexture, vUv);
-        gl_FragColor = vec4(CustomToneMapping(textureColor.rgb),1.0); // Set the color of the fragment to the sampled texture color
-      }
-    `;
-
 function loadLeftImage(texture) {
-    //toneMappingLuminance.parameters.uTexture.value = texture;
-
-    //update texture in dialog window
-    difWin.leftTexture = texture;
-    recomputeDiff = true;
-
-    const width = texture.image.width;    // 1920
-    const height = texture.image.height;  // 1080
-    const aspectRatio = width / height;   // 1.777
-
-    // Analyze the texture
-    const {r, g, b, L} = analyzeTexture(texture); // max and min RGB values of the texture
-    
-    maxInputLuminance = Math.max(r.max, g.max, b.max);
-    maxInputLuminance = 0.2126 * r.max + 0.7152 * g.max + 0.0722 * b.max;
-    avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
-    avgInputLuminance = 0.2126 * r.average + 0.7152 * g.average + 0.0722 * b.average;
-    logAvgInputLuminance = L.average;
-    
-    // Log the properties of the texture
-    console.log('Format de la textura:', texture.format);
-    console.log('Tipus de dades de la textura:', texture.type);
-    console.log('Mida de la textura:', texture.image.width, 'x', texture.image.height);
-    console.log('Generació de mipmaps:', texture.generateMipmaps);
-    console.log('MinFilter:', texture.minFilter);
-    console.log('MagFilter:', texture.magFilter);
-
-    console.log('Texture RGB Analysis:');
-    console.log(`Red - Min: ${r.min}, Max: ${r.max}, Sum: ${r.sum}, Count:${r.count}, Avg: ${r.average}`);
-    console.log(`Green - Min: ${g.min}, Max: ${g.max}, Sum: ${g.sum}, Count:${g.count}, Avg: ${g.average}`);
-    console.log(`Blue - Min: ${b.min}, Max: ${b.max}, Sum: ${b.sum}, Count:${b.count}, Avg: ${b.average}`);
-    console.log('Max input luminance:', maxInputLuminance);
-    console.log('Avg input luminance:', avgInputLuminance);
-    console.log('Log Avg input L:', logAvgInputLuminance);
-    console.log('Max input L:', L.max);
+    // Load image and update luminance values
+    leftView.loadImage(texture, true);
+    maxInputLuminance = leftView.maxInputLuminance;
+    avgInputLuminance = leftView.avgInputLuminance;
+    logAvgInputLuminance = leftView.logAvgInputLuminance;
 
     // Update the L_white of extended reinhard
     //toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
     //toneMappingReinhardExtended.updateParameterConfig("L_white", 0, L.max*2, L.max);
     //console.log(toneMappingFolder.folders);
 
-    // Find the Reinhard Folder
-    var folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
-    if (folder) {
-        // Find the controller for the parameter based on its name
-        const controller = folder.controllers.find(ctrl => ctrl._name === "L White");
-        if (controller) {
-            // Update the GUI display
-            //controller.max(L.max*2);
-            //controller.updateDisplay();
-        } else console.log("NOT FOUND");
-    }
+    // // Find the Reinhard Folder
+    // var folder = toneMappingFolder.folders.find(f => f._title === "Reinhard Extended");
+    // if (folder) {
+    //     // Find the controller for the parameter based on its name
+    //     const controller = folder.controllers.find(ctrl => ctrl._name === "L White");
+    //     if (controller) {
+    //         // Update the GUI display
+    //         //controller.max(L.max*2);
+    //         //controller.updateDisplay();
+    //     } else console.log("NOT FOUND");
+    // }
     
-    // Find the Luminance Folder
-    //toneMappingLuminance.updateParameterValue("Max_L", L.max);
-    folder = toneMappingFolder.folders.find(f => f._title === "Luminance");
-    if (folder) {
-        // Find the controller for the parameter based on its name
-        const controller = folder.controllers.find(ctrl => ctrl._name === "Max Luminance");
-        if (controller) {
-            // Update the GUI display
-        //      controller.max(L.max);
-        //      controller.updateDisplay();
-        } else console.log("NOT FOUND");
-    }
-    
-    // Create a material using the EXR texture
-    material = new THREE.ShaderMaterial({
-        uniforms: {
-            uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-            maxInputLuminance: { value: () => maxInputLuminance },
-            avgInputLuminance: { value: () => avgInputLuminance },
-            avg_L_w:           { value: () => logAvgInputLuminance },
-            uColorMap:          { type: 't', value: colorMapTexture}
-        },
-        toneMapped: false,
-        vertexShader: VS,
-        fragmentShader: FS
-    });
-    material.originalFragmentShader = material.fragmentShader;
-    material.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material.originalFragmentShader;
-    
-    // Create a plane geometry for displaying the image
-    const geometry = new THREE.PlaneGeometry(1.5 * aspectRatio, 1.5); // Adjust the size as needed for the image
+    // // Find the Luminance Folder
+    // //toneMappingLuminance.updateParameterValue("Max_L", L.max);
+    // folder = toneMappingFolder.folders.find(f => f._title === "Luminance");
+    // if (folder) {
+    //     // Find the controller for the parameter based on its name
+    //     const controller = folder.controllers.find(ctrl => ctrl._name === "Max Luminance");
+    //     if (controller) {
+    //         // Update the GUI display
+    //     //      controller.max(L.max);
+    //     //      controller.updateDisplay();
+    //     } else console.log("NOT FOUND");
+    // }
 
-    // Create a mesh using the geometry and material
-    const mesh = new THREE.Mesh(geometry, material);
-    //mesh.position.x = -1.35;
-    mesh.position.set(0, 0, 0);
-    // Add the mesh to the scene
-    scene.add(mesh);
+    // Update texture for difference
+    difWin.leftTexture = texture;
+    recomputeDiff = true;
 
-    render(); // Initial render after the EXR texture has loaded
+    // Re-render views 
+    render();
 }
 
 function loadRightImage(texture) {
-    //update texture in dialog window
+    // Load image and update luminance values
+    rightView.loadImage(texture);
+    maxInputLuminance = rightView.maxInputLuminance;
+    avgInputLuminance = rightView.avgInputLuminance;
+    logAvgInputLuminance = rightView.logAvgInputLuminance;
+
+    // Update texture for difference
     difWin.rightTexture = texture;
     recomputeDiff = true;
-
-    const width = texture.image.width;    // 1920
-    const height = texture.image.height;  // 1080
-    const aspectRatio = width / height;   // 1.777
-
-    // Analyze the texture
-    const {r, g, b, L} = analyzeTexture(texture); // max and min RGB values of the texture
-    maxInputLuminance = Math.max(r.max, g.max, b.max);
-    avgInputLuminance = (r.average/3 + g.average/3 + b.average/3);
-    logAvgInputLuminance = L.average;
-
-    // Create a material using the EXR texture
-    const material2 = new THREE.ShaderMaterial({
-        uniforms: {
-            uTexture: { type: 't', value: texture }, // Add the texture as a uniform
-            maxInputLuminance: { value: () => maxInputLuminance },
-            avgInputLuminance: { value: () => avgInputLuminance },
-            avg_L_w:           { value: () => logAvgInputLuminance },
-            uColorMap:          { type: 't', value: colorMapTexture}
-        },
-        toneMapped: false,
-        vertexShader: VS,
-        fragmentShader: FS
-    });
-    material2.originalFragmentShader = material2.fragmentShader;
-    material2.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material2.originalFragmentShader;
-
-    // Create a plane geometry for displaying the image
-    const geometry2 = new THREE.PlaneGeometry(1.5 * aspectRatio, 1.5); // Adjust the size as needed for the image
-
-    // Create a mesh using the geometry and material
-    const mesh2 = new THREE.Mesh(geometry2, material2);
-    mesh2.position.set(0, 0, 0); // Center the mesh in the scene
-
-    // Add the mesh to the second scene
-    scene2.add(mesh2);
-
-    render(); // Initial render after the EXR texture has loaded
+    
+    // Re-render views 
+    render();
 }
 
 function loadingError(error) {
     console.error('An error occurred while loading the EXR texture:', error);
 }
-
-// exrLoader.load('./textures/XII/Natural/pv2_c1.exr', loadLeftImage, undefined, loadingError);
-// exrLoader.load('./textures/XII/Natural/pv2_c2.exr', loadRightImage, undefined, loadingError);
 
 
 ///// GUI
@@ -415,12 +281,12 @@ function updateToneMapping() {
     const method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
 
     if (params.selectedTarget === 'both') {
-        setToneMappingMethod(scene, method);
-        setToneMappingMethod(scene2, method);
+        setToneMappingMethod(leftView.scene, method);
+        setToneMappingMethod(rightView.scene, method);
     } else if (params.selectedTarget === 'window1') {
-        setToneMappingMethod(scene, method);
+        setToneMappingMethod(leftView.scene, method);
     } else if (params.selectedTarget === 'window2') {
-        setToneMappingMethod(scene2, method);
+        setToneMappingMethod(rightView.scene, method);
     }
 
     render(); // Render the selected scenes
@@ -428,14 +294,9 @@ function updateToneMapping() {
 
 // Handle window resizing
 window.addEventListener('resize', function () {
-    camera.aspect = container1.clientWidth / container1.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container1.clientWidth, container1.clientHeight);
+    leftView.resize(containerL.clientWidth, containerL.clientHeight);
+    rightView.resize(containerR.clientWidth, containerR.clientHeight);
 
-    camera2.aspect = container2.clientWidth / container2.clientHeight;
-    camera2.updateProjectionMatrix();
-    renderer2.setSize(container2.clientWidth, container2.clientHeight);
-    
     render(); // Re-render the scene after resizing
 }, false);
 
@@ -443,11 +304,11 @@ window.addEventListener('resize', function () {
 function animate() {
     requestAnimationFrame(animate);
 
-    controls.update();
-    controls2.update();
+    controlsL.update();
+    controlsR.update();
 
-    renderer.render(scene, camera);
-    renderer2.render(scene2, camera2);
+    leftView.render();
+    rightView.render();
 }
 // animate();
 
@@ -463,19 +324,17 @@ function setToneMappingMethod(currentScene, method) {
 function render() {
     const method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
 
-    // Apply tone mapping to both scenes
-    // [scene, scene2].forEach((currentScene) => {
-    //     setToneMappingMethod(currentScene, method); // Apply tone mapping
-
+    // Select scenes to update
     let scenesToUpdate = [];
     if (params.selectedTarget === 'both') {
-        scenesToUpdate = [scene, scene2];
+        scenesToUpdate = [leftView.scene, rightView.scene];
     } else if (params.selectedTarget === 'window1') {
-        scenesToUpdate = [scene];
+        scenesToUpdate = [leftView.scene];
     } else if (params.selectedTarget === 'window2') {
-        scenesToUpdate = [scene2];
+        scenesToUpdate = [rightView.scene];
     }
 
+    // Set tone mapping parameters
     scenesToUpdate.forEach((currentScene) => {
         setToneMappingMethod(currentScene, method);
 
@@ -499,8 +358,8 @@ function render() {
     });
 
     // Render both scenes
-    renderer.render(scene, camera);
-    renderer2.render(scene2, camera2);
+    leftView.render();
+    rightView.render();
 }
 
 let syncing = false;
@@ -548,7 +407,7 @@ function openDialog() {
     //TODO: Create plane with material and the shaders
     //The shader must have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
     //then be able to compute the difference.
-    difWin.show(container3.clientWidth, container3.clientHeight, recomputeDiff);
+    difWin.show(containerD.clientWidth, containerD.clientHeight, recomputeDiff);
 
     recomputeDiff = false;  // to reopen dialog faster
 }

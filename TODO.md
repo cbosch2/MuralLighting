@@ -18,10 +18,11 @@
 
 # Image Loading
 
+- [ ] Set image size according to aspect ratio when loading images
 - [ ] Resize images for faster uploading?
 - [ ] Check if tone mapping change after updating an image is correct
-- [ ] Unify EXR loaders + put on a separate file?
-  - [ ] Remove statistics output too?
+- [X] Unify EXR loaders + put on a separate file?
+  - [X] Remove statistics output too?
 - [X] Update images
 
 

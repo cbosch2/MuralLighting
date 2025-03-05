@@ -9,6 +9,8 @@ app.use('/build/', express.static(path.join(__dirname, 'node_modules/three/build
 app.use('/jsm/', express.static(path.join(__dirname, 'node_modules/three/examples/jsm')))
 
 
+////// List of images
+
 function getEXRFiles(basePath, dir = '', arrayOfFiles = []) {
     const dirPath = basePath + dir;
     const files = fs.readdirSync(dirPath);   // read directory contents
@@ -17,7 +19,7 @@ function getEXRFiles(basePath, dir = '', arrayOfFiles = []) {
         const fullPath = path.join(dirPath, file);  // full path
         const relPath = dir + file;                 // relative path 
         if (fs.statSync(fullPath).isDirectory())    // recurse if directory
-            arrayOfFiles = getAllFiles(basePath, relPath + '/', arrayOfFiles);
+            arrayOfFiles = getEXRFiles(basePath, relPath + '/', arrayOfFiles);
         else if (path.extname(file) === '.exr')     // add file to array if EXR
             arrayOfFiles.push(relPath);
     });

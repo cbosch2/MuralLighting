@@ -9,6 +9,7 @@
  */
 
 import * as THREE from 'three';
+import colorMapTextureDiff from './colorMapTextureDiff.js';
 
 class DifferenceWindow {
 
@@ -19,7 +20,7 @@ class DifferenceWindow {
         this.camera.position.z = 2;
         this.leftTexture = null;
         this.rightTexture = null;
-        this.colorMap = null;
+        this.colorMap = colorMapTextureDiff;
         this.uMaxDelta = 0;
         this.uMaxDeltaWeight = 0;
         this.uImgOverlay = 0;
