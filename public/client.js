@@ -156,6 +156,7 @@ function loadLeftImage(texture) {
 
     //update texture in dialog window
     difWin.leftTexture = texture;
+    recomputeDiff = true;
 
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
@@ -249,6 +250,7 @@ function loadLeftImage(texture) {
 function loadRightImage(texture) {
     //update texture in dialog window
     difWin.rightTexture = texture;
+    recomputeDiff = true;
 
     const width = texture.image.width;    // 1920
     const height = texture.image.height;  // 1080
@@ -549,8 +551,6 @@ function openDialog() {
     difWin.show(container3.clientWidth, container3.clientHeight, recomputeDiff);
 
     recomputeDiff = false;  // to reopen dialog faster
-
-    console.log(images); // logs the list of file names
 }
 
 // Function to close the dialog

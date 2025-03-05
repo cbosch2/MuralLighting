@@ -1,6 +1,7 @@
 # Image Difference
 
 ## Difference
+- [ ] ==Overlay should use same tone mapping as image to avoid dark images==
 - [ ] Detect geometry changes? (using depth maps or other means)
 - [x] Adjust max difference value (+ change max computation)
 - [x] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
@@ -8,8 +9,8 @@
 - [x] Try other color maps? --> slightly changed white to yellow for the overlay
 
 ## Dialog
-- [ ] ==Show background and make it resizable / movable?==
-- [ ] Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio
+- [ ] ==Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio==
+- [ ] Show background and make it resizable / movable?
 - [ ] Make it responsive -> if window changes size's of dialog and canvas are incorrect
 - [ ] Control pannels should be collapsed when the dialog opens, and extended when the dialog closes
 - [ ] See how to integrate it with the main UI --> replace image instead of opening dialog?
@@ -17,9 +18,11 @@
 
 # Image Loading
 
-- [ ] ==Update images==
-- [ ] Solve bad tone mapping updating when loading right image
+- [ ] Resize images for faster uploading?
+- [ ] Check if tone mapping change after updating an image is correct
 - [ ] Unify EXR loaders + put on a separate file?
+  - [ ] Remove statistics output too?
+- [X] Update images
 
 
 # UI
