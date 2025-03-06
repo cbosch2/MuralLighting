@@ -31,6 +31,7 @@ window.three = THREE; // For debugging
 const containerL = document.getElementById('window1');
 var leftView = new ImageView(containerL.clientWidth, containerL.clientHeight);
 containerL.appendChild(leftView.renderer.domElement);
+console.log("container size: " + containerL.clientWidth + " x " + containerL.clientHeight);
 
 // Right View
 const containerR = document.getElementById('window2');
@@ -44,6 +45,7 @@ var fs = await readTextFile("shaders/fs_difference.glsl");
 var difWin = new DifferenceWindow(vs, fs)
 difWin.renderer.setSize(containerD.clientWidth, containerD.clientHeight);
 containerD.appendChild(difWin.renderer.domElement);
+// console.log("container size: " + containerD.clientWidth + " x " + containerD.clientHeight);
 
 // Set up Orbit Controls
 const controlsL = new OrbitControls(leftView.camera, leftView.renderer.domElement);
@@ -92,10 +94,10 @@ leftView.renderer.toneMappingExposure = 1.0; // Default exposure value
 
 ///// EXR loading
 
-// Luminance values used for tone mapping
-var maxInputLuminance = null;
-var avgInputLuminance = null;
-var logAvgInputLuminance = null;
+// // Luminance values used for tone mapping
+// var maxInputLuminance = null;
+// var avgInputLuminance = null;
+// var logAvgInputLuminance = null;
 
 const exrLoader = new EXRLoader();
 exrLoader.setDataType(THREE.FloatType); 
@@ -103,9 +105,9 @@ exrLoader.setDataType(THREE.FloatType);
 function loadLeftImage(texture) {
     // Load image and update luminance values
     leftView.loadImage(texture, true);
-    maxInputLuminance = leftView.maxInputLuminance;
-    avgInputLuminance = leftView.avgInputLuminance;
-    logAvgInputLuminance = leftView.logAvgInputLuminance;
+    // maxInputLuminance = leftView.maxInputLuminance;
+    // avgInputLuminance = leftView.avgInputLuminance;
+    // logAvgInputLuminance = leftView.logAvgInputLuminance;
 
     // Update the L_white of extended reinhard
     //toneMappingReinhardExtended.updateParameterValue("L_white", L.max);
@@ -139,25 +141,26 @@ function loadLeftImage(texture) {
 
     // Update texture for difference
     difWin.leftTexture = texture;
+    difWin.uMaxLum = leftView.avgInputLuminance;   // needed for image overlay
     recomputeDiff = true;
 
-    // Re-render views 
-    render();
+    // Re-render view 
+    render(leftView);
 }
 
 function loadRightImage(texture) {
     // Load image and update luminance values
     rightView.loadImage(texture);
-    maxInputLuminance = rightView.maxInputLuminance;
-    avgInputLuminance = rightView.avgInputLuminance;
-    logAvgInputLuminance = rightView.logAvgInputLuminance;
+    // maxInputLuminance = rightView.maxInputLuminance;
+    // avgInputLuminance = rightView.avgInputLuminance;
+    // logAvgInputLuminance = rightView.logAvgInputLuminance;
 
     // Update texture for difference
     difWin.rightTexture = texture;
     recomputeDiff = true;
     
-    // Re-render views 
-    render();
+    // Re-render view
+    render(rightView);
 }
 
 function loadingError(error) {
@@ -173,9 +176,9 @@ const params = {
     rightImage : '',
     syncViews : true,
     selectedTarget: 'both',
-    toneMappingMethodName: toneMappingMethods[0].name, // Default tone mapping method
-    maxDiff : 1.0,
-    imgOverlay : 0.25,
+    toneMappingMethodName: toneMappingMethods[1].name, // Default tone mapping method
+    maxDiff : 0.1,//1.0,
+    imgOverlay : 0.,//0.25,
 };
 
 // Create the GUI
@@ -220,13 +223,6 @@ for (let method of toneMappingMethods) {
 toneMappingFolder.close();
 updateFolders(params.toneMappingMethodName);
 
-// Image difference params
-const imgDiffFolder = gui.addFolder('Image Difference');
-imgDiffFolder.add({ openDialog: () => openDialog() }, 'openDialog').name('Show Difference');
-imgDiffFolder.add(params, 'maxDiff', 0.001, 1.0).name('Max Difference').onChange((value) => updateDiffParams());
-imgDiffFolder.add(params, 'imgOverlay', 0.0, 1.0).name('Image Overlay').onChange((value) => updateDiffParams());
-
-
 // Function to collapse other TM folders and expand the selected one
 function updateFolders(selectedOption) {
     //console.log(selectedOption);
@@ -239,6 +235,14 @@ function updateFolders(selectedOption) {
         }
     });
 }
+
+// Image difference params
+const imgDiffFolder = gui.addFolder('Image Difference');
+imgDiffFolder.add({ openDialog: () => openDialog() }, 'openDialog').name('Show Difference');
+imgDiffFolder.add(params, 'maxDiff', 0.001, 1.0).name('Max Difference').onChange((value) => updateDiffParams());
+imgDiffFolder.add(params, 'imgOverlay', 0.0, 1.0).name('Image Overlay').onChange((value) => updateDiffParams());
+imgDiffFolder.close();
+
 
 
 ///// Input images
@@ -321,28 +325,31 @@ function setToneMappingMethod(currentScene, method) {
     });
 }
 
-function render() {
+function render(view = null) {
     const method = toneMappingMethods.find(method => method.name === params.toneMappingMethodName);
 
-    // Select scenes to update
-    let scenesToUpdate = [];
-    if (params.selectedTarget === 'both') {
-        scenesToUpdate = [leftView.scene, rightView.scene];
+    // Select views to update (if not provided)
+    let viewsToUpdate = [];
+    if (view)
+        viewsToUpdate = [view];
+    else if (params.selectedTarget === 'both') {
+        viewsToUpdate = [leftView, rightView];
     } else if (params.selectedTarget === 'window1') {
-        scenesToUpdate = [leftView.scene];
+        viewsToUpdate = [leftView];
     } else if (params.selectedTarget === 'window2') {
-        scenesToUpdate = [rightView.scene];
+        viewsToUpdate = [rightView];
     }
 
-    // Set tone mapping parameters
-    scenesToUpdate.forEach((currentScene) => {
-        setToneMappingMethod(currentScene, method);
+    // Process views
+    viewsToUpdate.forEach((currentView) => {
+        // Set tone mapping parameters
+        setToneMappingMethod(currentView.scene, method);
 
-        currentScene.traverse((object) => {
+        currentView.scene.traverse((object) => {
             if (object.isMesh && object.material) {
-                object.material.uniforms.maxInputLuminance.value = maxInputLuminance;
-                object.material.uniforms.avgInputLuminance.value = avgInputLuminance;
-                object.material.uniforms.avg_L_w.value = logAvgInputLuminance;
+                object.material.uniforms.maxInputLuminance.value = currentView.maxInputLuminance;
+                object.material.uniforms.avgInputLuminance.value = currentView.avgInputLuminance;
+                object.material.uniforms.avg_L_w.value = currentView.logAvgInputLuminance;
 
                 // Apply tone mapping parameters
                 for (const [key, param] of Object.entries(method.parameters)) {
@@ -355,11 +362,10 @@ function render() {
                 object.material.needsUpdate = true;
             }
         });
-    });
 
-    // Render both scenes
-    leftView.render();
-    rightView.render();
+        // Render scene
+        currentView.render();
+    });
 }
 
 let syncing = false;
@@ -401,13 +407,12 @@ function openDialog() {
     dialog.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Disable scrolling on the background
 
-    // First update parameters
+    // Update parameters
     difWin.updateDiffParams(params.maxDiff, params.imgOverlay);
 
-    //TODO: Create plane with material and the shaders
-    //The shader must have two textures as input and a custom tone mapping operation that should be changed to compute both LDR colors per fragment
-    //then be able to compute the difference.
+    // Show dialog (recomputing difference if necessary)
     difWin.show(containerD.clientWidth, containerD.clientHeight, recomputeDiff);
+    console.log("container size: " + containerD.clientWidth + " x " + containerD.clientHeight);
 
     recomputeDiff = false;  // to reopen dialog faster
 }

@@ -11,7 +11,6 @@ vec3 CustomToneMapping( vec3 color ) {
     color *= exposure; 
     vec3 toned_color = ReinhardBasicToneMapping(color);
 
-    return pow(toned_color, vec3(1.0 / 2.2));;
-    return toned_color;
-
+    return pow(toned_color, vec3(1.0 / 2.2));
+    // return toned_color;
 }

@@ -1,13 +1,5 @@
 /* This module provides a class to encapsulate the widget where we show luminance differences between two images */
 
-/**** TODO's
- * [X] Change the shader to show the difference as a diverging color map (such as seismic or bwr)
- * [] The Control pannels should be collapsed when the dialog opened, and extended when the dialog closed. Changes TBD in client.js.
- * [] Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio
- * [] Make it responsive -> if window changes size's of dialog and canvas are incorrect.
- * ------------------------------------------- 
- */
-
 import * as THREE from 'three';
 import colorMapTextureDiff from './colorMapTextureDiff.js';
 
@@ -48,6 +40,7 @@ class DifferenceWindow {
         this.mesh = new THREE.Mesh(this.geometry, this.material);
         //mesh.position.x = -1.35;
         this.mesh.position.set(0, 0, 0);
+
         // Add the mesh to the scene
         this.scene.add(this.mesh);
     }
@@ -64,7 +57,7 @@ class DifferenceWindow {
             this.uMaxDelta = this.computeMaxDelta();
             this.material.uniforms.uMaxDelta.value = this.uMaxDelta * this.uMaxDeltaWeight;
             this.material.uniforms.uImgOverlay.value = this.uImgOverlay;
-            this.material.uniforms.uMaxLum.value = this.uMaxDelta;   // TODO: should be max luminance, not delta
+            this.material.uniforms.uMaxLum.value = this.uMaxLum;
             this.material.needsUpdate = true;
         }
 
@@ -76,7 +69,8 @@ class DifferenceWindow {
         this.camera.updateProjectionMatrix();
 
         //reset the scene to allow changes in size
-        this.mesh.scale.set(width/height, 1, 1);
+        // this.mesh.scale.set(width/height, 1, 1);
+        this.mesh.scale.set(this.leftTexture.image.width / this.leftTexture.image.height, 1, 1);
 
         this.startRendering();
     }

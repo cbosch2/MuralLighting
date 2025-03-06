@@ -31,6 +31,7 @@ class ImageView {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
         this.camera.position.z = 2;
+        this.material = null;
         this.maxInputLuminance = null;
         this.avgInputLuminance = null;
         this.logAvgInputLuminance = null;
@@ -72,7 +73,7 @@ class ImageView {
         }
         
         // Create a material using the texture
-        const material = new THREE.ShaderMaterial({
+        this.material = new THREE.ShaderMaterial({
             uniforms: {
                 uTexture: { type: 't', value: texture }, // Add the texture as a uniform
                 maxInputLuminance: { value: () => this.maxInputLuminance },
@@ -84,14 +85,14 @@ class ImageView {
             vertexShader: VS,
             fragmentShader: FS
         });
-        material.originalFragmentShader = material.fragmentShader;
-        material.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + material.originalFragmentShader;
+        this.material.originalFragmentShader = this.material.fragmentShader;
+        this.material.fragmentShader = "vec3 CustomToneMapping( vec3 color ) {return color;}" + this.material.originalFragmentShader;
     
         // Create a plane geometry for displaying the image
-        const geometry = new THREE.PlaneGeometry(1.5 * aspectRatio, 1.5); // Adjust the size as needed for the image
+        const geometry = new THREE.PlaneGeometry(3 * aspectRatio, 3); // Adjust the size as needed for the image
     
         // Create a mesh using the geometry and material
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(geometry, this.material);
         mesh.position.set(0, 0, 0); // Center the mesh in the scene
     
         // Add mesh to the scene
