@@ -10,12 +10,10 @@
 
 ## Dialog
 - [ ] Aspect ratio of the dialog does not change dynamically (either initially) to take into account texture's aspect ratio
-- [ ] Show background and make it resizable / movable?
 - [ ] Make it responsive -> if window changes size's of dialog and canvas are incorrect
-- [ ] Control pannels should be collapsed when the dialog opens, and extended when the dialog closes
-- [ ] See how to integrate it with the main UI --> replace image instead of opening dialog?
+- [ ] Control pannels should be collapsed when the dialog opens, and extended when the dialog closes?
 - [X] Corrected aspect ratio of the displayed image (not the dialog size itself)
-
+- [X] Show background and make it resizable / movable?  --> movable for now
 
 # Image Loading
 

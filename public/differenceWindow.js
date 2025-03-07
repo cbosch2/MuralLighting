@@ -33,8 +33,7 @@ class DifferenceWindow {
         });
         
         // Create a plane geometry for displaying the image
-        const aspectRatio = 2;//TODO compute it depending on the texture...
-        this.geometry = new THREE.PlaneGeometry(3, 3); // Adjust the size as needed for the image
+        this.geometry = new THREE.PlaneGeometry(3.1, 3.1); // Adjust the size as needed for the image
     
         // Create a mesh using the geometry and material
         this.mesh = new THREE.Mesh(this.geometry, this.material);
@@ -69,7 +68,6 @@ class DifferenceWindow {
         this.camera.updateProjectionMatrix();
 
         //reset the scene to allow changes in size
-        // this.mesh.scale.set(width/height, 1, 1);
         this.mesh.scale.set(this.leftTexture.image.width / this.leftTexture.image.height, 1, 1);
 
         this.startRendering();

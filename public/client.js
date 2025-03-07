@@ -241,7 +241,7 @@ const imgDiffFolder = gui.addFolder('Image Difference');
 imgDiffFolder.add({ openDialog: () => openDialog() }, 'openDialog').name('Show Difference');
 imgDiffFolder.add(params, 'maxDiff', 0.001, 1.0).name('Max Difference').onChange((value) => updateDiffParams());
 imgDiffFolder.add(params, 'imgOverlay', 0.0, 1.0).name('Image Overlay').onChange((value) => updateDiffParams());
-imgDiffFolder.close();
+// imgDiffFolder.close();
 
 
 
@@ -398,12 +398,14 @@ animate();
 
 // Reference the existing dialog and close button
 const dialog = document.getElementById('differenceDialog'); // Dialog container
+const dialogContent = document.getElementById('differenceView'); // Dialog content
+const dragHandle = document.getElementById('drag-handle');  // Dragging header
 const closeDialogButton = document.querySelector('.close-button'); // Close button inside dialog
 let recomputeDiff = true;
 
 // Function to open the dialog
 function openDialog() {
-    // Display the dialog and hide everything else in the background
+    // Display the dialog (+ overlay)
     dialog.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Disable scrolling on the background
 
@@ -412,7 +414,7 @@ function openDialog() {
 
     // Show dialog (recomputing difference if necessary)
     difWin.show(containerD.clientWidth, containerD.clientHeight, recomputeDiff);
-    console.log("container size: " + containerD.clientWidth + " x " + containerD.clientHeight);
+    // console.log("container size: " + containerD.clientWidth + " x " + containerD.clientHeight);
 
     recomputeDiff = false;  // to reopen dialog faster
 }
@@ -432,6 +434,35 @@ dialog.addEventListener('click', (event) => {
         closeDialog();
     }
 });
+
+
+// Dragging variables
+let offsetX = 0, offsetY = 0;
+let isDragging = false;
+
+// When mouse is pressed on the dialog header, start dragging
+dragHandle.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - dialog.offsetLeft;
+    offsetY = e.clientY - dialog.offsetTop;
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+});
+
+// While dragging, update the dialog position
+function onMouseMove(e) {
+    if (isDragging) {
+        dialog.style.left = `${e.clientX - offsetX}px`;
+        dialog.style.top = `${e.clientY - offsetY}px`;
+    }
+}
+
+// When mouse is released, stop dragging
+function onMouseUp() {
+    isDragging = false;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+}
 
 // update max delta value (using GUI control)
 function updateDiffParams() {
