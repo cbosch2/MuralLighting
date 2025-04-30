@@ -6,14 +6,14 @@ import Stats from './jsm/libs/stats.module.js';
 import { GUI } from './jsm/libs/lil-gui.module.min.js'; // Import lil-gui for the exposure slider
 import { EXRLoader } from './jsm/loaders/EXRLoader.js'; // Ensure you have this loader
 // import analyzeTexture from './analyzeTexture.js'; // Import the analyzeTexture function
-import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
 import toneMappingLinear from './toneMappingLinear.js';
 //import toneMappingLinearGamma from './toneMappingLinearGamma.js';
+import toneMappingReinhardBasic from './toneMappingReinhardBasic.js'; // Import the toneMappingReinhardBasic shader
 import toneMappingReinhardExtended from './toneMappingReinhardExtended.js'
 import toneMappingLuminance from './toneMappingLuminance.js'
 import ImageView from './imageView.js';
 import DifferenceWindow from './differenceWindow.js';
-import readTextFile from './shaderReader.js'; 
+import readTextFile from './shaderReader.js';
 // import colorMapTexture from './colorMapTexture.js';
 // import colorMapTextureDiff from './colorMapTextureDiff.js';
 
@@ -83,8 +83,8 @@ controlsR.addEventListener('change', () => {
 });
 
 // Initialize stats for performance monitoring
-const stats = Stats();
-document.body.appendChild(stats.dom);
+//const stats = Stats();
+//document.body.appendChild(stats.dom);
 
 // Tone mapping
 var toneMappingDefaultShaderCode = THREE.ShaderChunk.tonemapping_pars_fragment;
@@ -102,9 +102,9 @@ leftView.renderer.toneMappingExposure = 1.0; // Default exposure value
 const exrLoader = new EXRLoader();
 exrLoader.setDataType(THREE.FloatType); 
 
-function loadLeftImage(texture) {
+function loadLeftImage(texture = null) {
     // Load image and update luminance values
-    leftView.loadImage(texture, true);
+    if (texture) leftView.loadImage(texture, true);
     // maxInputLuminance = leftView.maxInputLuminance;
     // avgInputLuminance = leftView.avgInputLuminance;
     // logAvgInputLuminance = leftView.logAvgInputLuminance;
@@ -139,8 +139,15 @@ function loadLeftImage(texture) {
     //     } else console.log("NOT FOUND");
     // }
 
+    // Use right-view normalization for this view too (overwrite computed values)
+    if (params.fixNormalization) {
+        leftView.maxInputLuminance = rightView.maxInputLuminance;
+        leftView.avgInputLuminance = rightView.avgInputLuminance;
+        leftView.logAvgInputLuminance = rightView.logAvgInputLuminance;
+    }
+
     // Update texture for difference
-    difWin.leftTexture = texture;
+    if (texture) difWin.leftTexture = texture;
     difWin.uMaxLum = leftView.avgInputLuminance;   // needed for image overlay
     recomputeDiff = true;
 
@@ -159,6 +166,9 @@ function loadRightImage(texture) {
     difWin.rightTexture = texture;
     recomputeDiff = true;
     
+    // Recompute left view too if needed
+    if (params.fixNormalization) loadLeftImage();
+
     // Re-render view
     render(rightView);
 }
@@ -175,6 +185,7 @@ const params = {
     leftImage : '',
     rightImage : '',
     syncViews : true,
+    fixNormalization : false,
     selectedTarget: 'both',
     toneMappingMethodName: toneMappingMethods[1].name, // Default tone mapping method
     maxDiff : 0.1,//1.0,
@@ -205,6 +216,9 @@ toneMappingFolder.add(params, 'toneMappingMethodName', options).name('Tone mappi
     updateFolders(value);
     updateToneMapping();
 });
+
+// To fix/share normalization between views
+toneMappingFolder.add(params, 'fixNormalization').name('Fix normalization');
 
 // Specific params of each method
 for (let method of toneMappingMethods) {

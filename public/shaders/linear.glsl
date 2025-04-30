@@ -1,4 +1,4 @@
-uniform float maxInputLuminance; // provided by the application
+uniform float maxInputLuminance; // provided by the application  // NOTE: not used
 uniform float avgInputLuminance; // provided by the application        
 uniform float exposure; 
 
