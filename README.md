@@ -25,7 +25,7 @@ repo-root/
 ├── webapp/  
 │   └── ...              # Code of the web application to visualize rendered hypotheses  
 │
-├── sim/  
+├── simulation/  
 │   └── ...              # Code and data needed to run the simulations  
 │
 └── README.md            # This file
