@@ -8,7 +8,7 @@ This is the official repository of:
 
 ## Overview
 
-[![Watch the video](https://i.sstatic.net/Vp2cE.png)](https://www.youtube.com/watch?v=AUqzzYyuAXw)
+[![Watch the video](doc/video.png)](https://www.youtube.com/watch?v=AUqzzYyuAXw)
 
 ## Repository Organization
 
