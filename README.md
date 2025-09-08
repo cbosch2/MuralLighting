@@ -7,6 +7,7 @@ This is the official repository of:
 ![Teaser](doc/teaser.png "A complete methodology for light restoration in Cultural Heritage sites.")
 
 ## Overview
+Here you can find a video that overviews our work:
 
 [![Watch the video](doc/video.png)](https://www.youtube.com/watch?v=AUqzzYyuAXw)
 
