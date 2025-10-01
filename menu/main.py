@@ -180,16 +180,16 @@ def main():
 
     with expansion(tabs, panels, "Interactive viewer",""):
         code = '''
-        <div class="w-full">
-        <iframe 
-            src="http://127.0.0.1:3006/" <!-- for development; replace with proper URL for production -->
-            class="w-full h-screen border-0" 
-            allowfullscreen
-            loading="lazy">
-        </iframe>
+        <div class="w-full h-full">
+            <iframe 
+                src="http://127.0.0.1:3006/" 
+                style="width:100%; height:100%; border:none;" 
+                allowfullscreen
+                loading="lazy">
+            </iframe>
         </div>
         '''
-        ui.html(code).classes('w-full')
+        ui.html(code).classes('w-full  h-[80vh]')
 
             
 
