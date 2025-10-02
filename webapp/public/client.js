@@ -173,9 +173,52 @@ function loadRightImage(texture) {
     render(rightView);
 }
 
+function showSelectedImages() {
+    // Only if there are already two images selected
+    if (params.leftImage && params.rightImage) {
+        exrLoader.load('./textures/' + params.leftImage, loadLeftImage, undefined, loadingError);
+        exrLoader.load('./textures/' + params.rightImage, loadRightImage, undefined, loadingError);
+    }
+}
+
+function getQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        img1: params.get('img1'),
+        img2: params.get('img2')
+    };
+}
+
+function loadSelectedImagesFromURL() {
+    const { img1, img2 } = getQueryParams();
+
+    if (img1 && img2) {
+        params.leftImage = img1;
+        params.rightImage = img2;
+
+        // Update GUI menus if they already exist
+        if (leftImageMenu && rightImageMenu) {
+            leftImageMenu.setValue(img1);   
+            rightImageMenu.setValue(img2);  
+        } else {
+            // If the menus don't exist yet, we just load the images
+            showSelectedImages();
+        }
+    }
+}
+
+
+// Call on page load
+//window.addEventListener('DOMContentLoaded', loadSelectedImagesFromURL);
+
+
+
 function loadingError(error) {
     console.error('An error occurred while loading the EXR texture:', error);
 }
+
+
+
 
 
 ///// GUI
@@ -261,35 +304,38 @@ imgDiffFolder.add(params, 'imgOverlay', 0.0, 1.0).name('Image Overlay').onChange
 
 ///// Input images
 
+let leftImageMenu, rightImageMenu;
 let images = [];
 
 fetch('/images')
-    .then(response => response.json()) // parse the response as JSON
+    .then(response => response.json())
     .then(files => {
         images = files;
-        // console.log(images);
 
-        // // Update GUI images' dropdowns
-        // leftImageMenu.setValue(images[0]);   // init image selection (+ load them)
-        // rightImageMenu.setValue(images[1]);
-        // leftImageMenu.options(images);       // update lists  // NOTE: this removes the callback and value sometimes
-        // rightImageMenu.options(images);
-
-        // Add image dropdowns + callbacks for loading (better doing this alltogether)
-        const leftImageMenu = gui.add(params, 'leftImage', images).name('Left Image').onChange((value) => {
+        // Create GUI menus
+        leftImageMenu = gui.add(params, 'leftImage', images).name('Left Image').onChange((value) => {
             exrLoader.load('./textures/' + value, loadLeftImage, undefined, loadingError);
         });
-        const rightImageMenu = gui.add(params, 'rightImage', images).name('Right Image').onChange((value) => {
+        rightImageMenu = gui.add(params, 'rightImage', images).name('Right Image').onChange((value) => {
             exrLoader.load('./textures/' + value, loadRightImage, undefined, loadingError);
         });
-        
-        // Set initial images (+ load them)
-        leftImageMenu.setValue(images[0]);
-        rightImageMenu.setValue(images[1]);
+
+        // Load initial images
+        const { img1, img2 } = getQueryParams();
+        if (img1 && img2) {
+            params.leftImage = img1;
+            params.rightImage = img2;
+        } else {
+            params.leftImage = images[0];
+            params.rightImage = images[1];
+        }
+
+        // Update GUI menus (this also triggers loading of images)
+        leftImageMenu.setValue(params.leftImage);
+        rightImageMenu.setValue(params.rightImage);
     })
-    .catch(error => {
-        console.error('Error fetching images: ', error);
-    });
+    .catch(error => console.error('Error fetching images: ', error));
+
 
 
 ///// Rendering + Tone mapping

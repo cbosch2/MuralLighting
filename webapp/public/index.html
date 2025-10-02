@@ -8,46 +8,40 @@
         body {
             overflow: hidden;
             margin: 0px;
-            display: flex; /* To place the two containers side by side */
+            display: flex;
             background-color: #000;
-            border-radius: 0px;
         }
-
         .threejs-window {
-            width: 50%;  /* Each window takes half the screen width */
-            height: 100vh;  /* Full height */
+            width: 50%;
+            height: 100vh;
         }
-
-        .dialog {  /* Dialog background/overlay */  /* TODO: avoid moving it while dragging */
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay on top */
+        .dialog {
+            display: none;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0/* 0.5 */); /* Dimmed background */
+            background-color: rgba(0, 0, 0, 0);
             justify-content: center;
             align-items: center;
-            pointer-events: all; /* Ensures only dialog elements are clickable */
-            z-index: 1000; /* Above everything */
+            pointer-events: all;
+            z-index: 1000;
         }
-
-        .dialog-content {  /* Actual dialog */
+        .dialog-content {
             background-color: #fff;
-            /* padding: 10px; */
             border-radius: 8px;
             text-align: center;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
-            width: 40%;/*70%;*/
-            height: 90%;/*70%;*/
+            width: 40%;
+            height: 90%;
             max-width: 90%;
             max-height: 90%;
-            overflow: auto; /* Scrollbars if content overflows */
+            overflow: auto;
             position: relative;
-            z-index: 1001; /* Ensures the dialog content is above the background */
+            z-index: 1001;
         }
-
-        .dialog-header {  /* Dialog Header (for dragging) */
+        .dialog-header {
             cursor: grab;
             background: #f1f1f1;
             padding: 10px;
@@ -55,7 +49,6 @@
             font-weight: bold;
             text-align: center;
         }
-
         .close-button {
             position: absolute;
             top: -2px;
@@ -66,7 +59,6 @@
         }
     </style>
 
-    <!-- Import maps polyfill -->
     <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
@@ -74,14 +66,12 @@
                 "three": "./build/three.module.js"
             }
         }
-        </script>
+    </script>
 </head>
 <body>
-    <!-- Two containers for the two Three.js instances -->
     <div id="window1" class="threejs-window"></div>
     <div id="window2" class="threejs-window"></div>
 
-    <!-- Dialog for difference view -->
     <div id="differenceDialog" class="dialog">
         <div id="differenceView" class="dialog-content">
             <div id="drag-handle" class="dialog-header"></div>
@@ -89,6 +79,8 @@
             <div id="winDiff" style="width:100%; height:95%" class="threejs-window"></div>
         </div>
     </div>
+
+  
 
     <script type="module" src="client.js"></script>
 </body>

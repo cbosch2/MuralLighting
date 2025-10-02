@@ -1,5 +1,41 @@
 from nicegui import ui # pip install nicegui
 
+selected_cards = [] # global list to control the selected ones
+
+iframe_container = None
+
+def show_selected_images():
+    if len(selected_cards) == 2:
+        def format_exr(image_name):
+            # Get the folder name and file name
+            parts = image_name.rsplit('/', 1)  # ['folder', 'file.jpg']
+            folder = parts[0]                  # folder
+            file_name = parts[1].rsplit('.', 1)[0]  # name without extension
+            return f"XII/{folder}/{file_name}.exr"   # new format
+
+        img1 = format_exr(selected_cards[0]["image"])
+        img2 = format_exr(selected_cards[1]["image"])
+        url = f"http://127.0.0.1:3006/index.html?img1={img1}&img2={img2}"
+    else:
+        url = "http://127.0.0.1:3006/index.html"
+
+    return f'''
+    <div class="w-full h-full">
+        <iframe 
+            src="{url}" 
+            style="width:100%; height:100%; border:none;" 
+            allowfullscreen
+            loading="lazy">
+        </iframe>
+    </div>
+    '''
+
+
+
+
+
+
+
 def expansion(tabs, panels, text, description=None, classes=""):
     with tabs:
         tab = ui.tab(text)
@@ -10,23 +46,46 @@ def expansion(tabs, panels, text, description=None, classes=""):
                 ui.markdown(f"### {description}")
     return exp
 
-def card(image, text, classes):
-    with ui.card().tight().classes(classes):
+def card(image, text, classes, max_selected=2):
+    with ui.card().tight().classes(classes) as c:
         with ui.image(image) as img:
-            button = ui.button(on_click=lambda: ui.notify('thumbs up'), icon='check_circle') \
-            .props('flat fab color=white') \
-            .classes('absolute top-0 right-0 m-1')
-            button.set_visibility(False) # hide button by default
-            # hide button on click
-            img.on('click', lambda: button.set_visibility(not button.visible))
+            button = ui.button(icon='check_circle') \
+                .props('flat fab color=white') \
+                .classes('absolute top-0 right-0 m-1')
+            button.set_visibility(False)  # hidden by default
 
+            def toggle_selection():
+                global selected_cards, iframe_container
+
+                # Find if the card is already selected
+                found = next((s for s in selected_cards if s["card"] == c), None)
+
+                if found:
+                    # Deselect
+                    selected_cards = [s for s in selected_cards if s["card"] != c]
+                    button.set_visibility(False)
+                else:
+                    # Only allow up to max_selected
+                    if len(selected_cards) >= max_selected:
+                        ui.notify(f'⚠️ You can only select {max_selected}', color='red')
+                        return
+                    selected_cards.append({"card": c, "image": image, "text": text})
+                    button.set_visibility(True)
+
+                # Update iframe
+                if iframe_container:
+                    iframe_container.set_content(show_selected_images())
+
+
+            img.on('click', toggle_selection)
 
         with ui.card_section():
-            if type(text) == list:
+            if isinstance(text, list):
                 for t in text:
                     ui.markdown(t)
             else:
                 ui.markdown(text)
+        
             
 NATURAL = "**Natural illumination**: "
 NAT_NONE = "**Natural illumination**: no"
@@ -56,9 +115,21 @@ D3T3 = "- Time: 13:53 pm"
 
 @ui.page('/')
 def main():
+
+    global selected_cards
+    # Only clear the selected list
+    selected_cards = []
+
+    # Hide checks from any existing cards
+    for s in selected_cards:
+        s["card"].query_selector("button").set_visibility(False)
+
+        
     #ui.dark_mode().enable()
+    
     tabs = ui.tabs().classes('w-full')
     panels = ui.tab_panels(tabs).classes('w-full')
+    
 
     with panels:
         with expansion(tabs, panels, "Introduction", 'Anonymous introduction'):
@@ -73,7 +144,7 @@ def main():
                     with ui.card():
                         ui.markdown(f'##### {D2}').classes(heading_classes)
                         with ui.row().classes('w-full'):
-                            card("natural/D2T1.jpg", [NATURAL, DD2, D2T1, ART_NONE], classes)
+                            card("natural/D2T1-pv2.jpg", [NATURAL, DD2, D2T1, ART_NONE], classes)
                             card("natural/D2T2.jpg", [NATURAL, DD2, D2T2, ART_NONE], classes)
                             card("natural/D2T3.jpg", [NATURAL, DD2, D2T3, ART_NONE], classes)
 
@@ -179,17 +250,14 @@ def main():
 
 
     with expansion(tabs, panels, "Interactive viewer",""):
-        code = '''
-        <div class="w-full h-full">
-            <iframe 
-                src="http://127.0.0.1:3006/" 
-                style="width:100%; height:100%; border:none;" 
-                allowfullscreen
-                loading="lazy">
-            </iframe>
-        </div>
-        '''
-        ui.html(code).classes('w-full  h-[80vh]')
+        global iframe_container
+        iframe_container = ui.html(show_selected_images()).classes('w-full h-[80vh]')
+        
+
+        
+        
+
+
 
             
 
