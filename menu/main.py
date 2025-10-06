@@ -2,6 +2,8 @@ from nicegui import ui # pip install nicegui
 
 selected_cards = [] # global list to control the selected ones
 
+all_cards = {}
+
 iframe_container = None
 
 def show_selected_images():
@@ -11,6 +13,7 @@ def show_selected_images():
             parts = image_name.rsplit('/', 1)  # ['folder', 'file.jpg']
             folder = parts[0]                  # folder
             file_name = parts[1].rsplit('.', 1)[0]  # name without extension
+            folder = folder.replace('+', '%2B')
             return f"XII/{folder}/{file_name}.exr"   # new format
 
         img1 = format_exr(selected_cards[0]["image"])
@@ -33,6 +36,13 @@ def show_selected_images():
 
 
 
+def update_all_cards_visibility():
+    selected_images = [s["image"] for s in selected_cards]
+    for image, buttons in all_cards.items():
+        
+        for button in buttons:
+            button.set_visibility(image in selected_images)
+
 
 
 
@@ -52,30 +62,36 @@ def card(image, text, classes, max_selected=2):
             button = ui.button(icon='check_circle') \
                 .props('flat fab color=white') \
                 .classes('absolute top-0 right-0 m-1')
-            button.set_visibility(False)  # hidden by default
+            button.set_visibility(False)
+
+            
+            if image not in all_cards:
+                all_cards[image] = []
+            all_cards[image].append(button)
+
 
             def toggle_selection():
                 global selected_cards, iframe_container
 
-                # Find if the card is already selected
-                found = next((s for s in selected_cards if s["card"] == c), None)
+                # Let's check if the image is already selected.
+                found = next((s for s in selected_cards if s["image"] == image), None)
 
                 if found:
-                    # Deselect
-                    selected_cards = [s for s in selected_cards if s["card"] != c]
-                    button.set_visibility(False)
+                    # If it was already selected, we remove it.
+                    selected_cards = [s for s in selected_cards if s["image"] != image]
                 else:
-                    # Only allow up to max_selected
+                    # If it is not yet selected
                     if len(selected_cards) >= max_selected:
-                        ui.notify(f'⚠️ You can only select {max_selected}', color='red')
+                        ui.notify(f'⚠️ Only {max_selected} images allowed', color='red')
                         return
                     selected_cards.append({"card": c, "image": image, "text": text})
-                    button.set_visibility(True)
 
-                # Update iframe
+                # We update visibility on all tabs
+                update_all_cards_visibility()
+
+                # We update the viewer (iframe)
                 if iframe_container:
                     iframe_container.set_content(show_selected_images())
-
 
             img.on('click', toggle_selection)
 
@@ -85,6 +101,7 @@ def card(image, text, classes, max_selected=2):
                     ui.markdown(t)
             else:
                 ui.markdown(text)
+
         
             
 NATURAL = "**Natural illumination**: "
@@ -145,32 +162,32 @@ def main():
                         ui.markdown(f'##### {D2}').classes(heading_classes)
                         with ui.row().classes('w-full'):
                             card("natural/D2T1-pv2.jpg", [NATURAL, DD2, D2T1, ART_NONE], classes)
-                            card("natural/D2T2.jpg", [NATURAL, DD2, D2T2, ART_NONE], classes)
-                            card("natural/D2T3.jpg", [NATURAL, DD2, D2T3, ART_NONE], classes)
+                            card("natural/D2T2-pv2.jpg", [NATURAL, DD2, D2T2, ART_NONE], classes)
+                            card("natural/D2T3-pv2.jpg", [NATURAL, DD2, D2T3, ART_NONE], classes)
 
                     with ui.card():
                         ui.markdown(f'##### {D3}').classes(heading_classes)
                         with ui.row().classes('w-full'):
-                            card("natural/D3T1.jpg", [NATURAL, DD3, D3T1, ART_NONE], classes)
-                            card("natural/D3T2.jpg", [NATURAL, DD3, D3T2, ART_NONE], classes)
-                            card("natural/D3T3.jpg", [NATURAL, DD3, D3T3, ART_NONE], classes)
+                            card("natural/D3T1-pv2.jpg", [NATURAL, DD3, D3T1, ART_NONE], classes)
+                            card("natural/D3T2-pv2.jpg", [NATURAL, DD3, D3T2, ART_NONE], classes)
+                            card("natural/D3T3-pv2.jpg", [NATURAL, DD3, D3T3, ART_NONE], classes)
 
                     with ui.card():
                         ui.markdown(f'##### {D1}').classes(heading_classes)
                         with ui.row().classes('w-full'):
-                            card("natural/D1T1.jpg", [NATURAL, DD1, D1T1, ART_NONE], classes)
-                            card("natural/D1T2.jpg", [NATURAL, DD1, D1T2, ART_NONE], classes)
-                            card("natural/D1T3.jpg", [NATURAL, DD1, D1T3, ART_NONE], classes)
+                            card("natural/D1T1-pv2.jpg", [NATURAL, DD1, D1T1, ART_NONE], classes)
+                            card("natural/D1T2-pv2.jpg", [NATURAL, DD1, D1T2, ART_NONE], classes)
+                            card("natural/D1T3-pv2.jpg", [NATURAL, DD1, D1T3, ART_NONE], classes)
 
     with expansion(tabs, panels, "Artificial illumination", 'The images below were rendered with **no natural lighting**, with **different layouts** for the **candles** and **oil lamps**:'):
         with ui.column().classes('w-full'):
             with ui.row().classes('w-full justify-center items-center'):
                 classes = "min-w-[220px] min-h-[400px]"
-                card("artificial/C1pv2R.jpg", [NAT_NONE, ARTIFICIAL, C1], classes)
-                card("artificial/C2pv2R.jpg", [NAT_NONE, ARTIFICIAL, C2], classes)
-                card("artificial/C3pv2R.jpg", [NAT_NONE, ARTIFICIAL, C3], classes)
-                card("artificial/C4pv2R.jpg", [NAT_NONE, ARTIFICIAL, C4], classes)
-                card("artificial/C5pv2R.jpg", [NAT_NONE, ARTIFICIAL, C1, C2, C4], classes)
+                card("artificial/C1-pv2.jpg", [NAT_NONE, ARTIFICIAL, C1], classes)
+                card("artificial/C2-pv2.jpg", [NAT_NONE, ARTIFICIAL, C2], classes)
+                card("artificial/C3-pv2.jpg", [NAT_NONE, ARTIFICIAL, C3], classes)
+                card("artificial/C4-pv2.jpg", [NAT_NONE, ARTIFICIAL, C4], classes)
+                card("artificial/C5-pv2.jpg", [NAT_NONE, ARTIFICIAL, C1, C2, C4], classes)
 
 
     with expansion(tabs, panels, "Natural and artificial illumination", 'The images below were rendered with **natural lighting** and varying **artificial light sources**:'):
@@ -181,14 +198,14 @@ def main():
             with ui.card():
                 ui.markdown(f'##### {D2}').classes(heading_classes)
                 with ui.row().classes('w-full'):
-                    card("nat&art/D2C2.jpg", [NATURAL, DD2, D2T3, ARTIFICIAL, C2], classes)
-                    card("nat&art/D2C5.jpg", [NATURAL, DD2, D2T3, ARTIFICIAL, C1, C2, C4], classes)
+                    card("Natural+Artificial/D2T3-C2-pv2.jpg", [NATURAL, DD2, D2T3, ARTIFICIAL, C2], classes)
+                    card("Natural+Artificial/D2T3-C5-pv2.jpg", [NATURAL, DD2, D2T3, ARTIFICIAL, C1, C2, C4], classes)
 
             with ui.card():
                 ui.markdown(f'##### {D1}').classes(heading_classes)
                 with ui.row().classes('w-full'):
-                    card("nat&art/D1C2.jpg", [NATURAL, DD1, D1T3, ARTIFICIAL, C2], classes)
-                    card("nat&art/D1C5.jpg", [NATURAL, DD1, D1T3, ARTIFICIAL, C1, C2, C4], classes)
+                    card("Natural+Artificial/D1T3-C2-pv2.jpg", [NATURAL, DD1, D1T3, ARTIFICIAL, C2], classes)
+                    card("Natural+Artificial/D1T3-C5-pv2.jpg", [NATURAL, DD1, D1T3, ARTIFICIAL, C1, C2, C4], classes)
 
 
 
@@ -202,33 +219,33 @@ def main():
                 with ui.card():
                     ui.markdown(f'##### {D2}').classes(heading_classes)
                     with ui.row().classes('w-full'):
-                        card("natural/D2T1.jpg", [D2T1[2:]], classes)
-                        card("natural/D2T2.jpg", [D2T2[2:]], classes)
-                        card("natural/D2T3.jpg", [D2T3[2:]], classes)
+                        card("natural/D2T1-pv2.jpg", [D2T1[2:]], classes)
+                        card("natural/D2T2-pv2.jpg", [D2T2[2:]], classes)
+                        card("natural/D2T3-pv2.jpg", [D2T3[2:]], classes)
 
                 with ui.card():
                     ui.markdown(f'##### {D3}').classes(heading_classes)
                     with ui.row().classes('w-full'):
-                        card("natural/D3T1.jpg", [D3T1[2:]], classes)
-                        card("natural/D3T2.jpg", [D3T2[2:]], classes)
-                        card("natural/D3T3.jpg", [D3T3[2:]], classes)
+                        card("natural/D3T1-pv2.jpg", [D3T1[2:]], classes)
+                        card("natural/D3T2-pv2.jpg", [D3T2[2:]], classes)
+                        card("natural/D3T3-pv2.jpg", [D3T3[2:]], classes)
 
                 with ui.card():
                     ui.markdown(f'##### {D1}').classes(heading_classes)
                     with ui.row().classes('w-full'):
-                        card("natural/D1T1.jpg", [D1T1[2:]], classes)
-                        card("natural/D1T2.jpg", [D1T2[2:]], classes)
-                        card("natural/D1T3.jpg", [D1T3[2:]], classes)
+                        card("natural/D1T1-pv2.jpg", [D1T1[2:]], classes)
+                        card("natural/D1T2-pv2.jpg", [D1T2[2:]], classes)
+                        card("natural/D1T3-pv2.jpg", [D1T3[2:]], classes)
     
         with ui.card().classes('w-full'):
             ui.markdown('##### Artificial illumination')
             with ui.row().classes('w-full justify-center items-center'):
                 classes = "min-w-[180px] min-h-[300px]"
-                card("artificial/C1pv2R.jpg", [C1[2:]], classes)
-                card("artificial/C2pv2R.jpg", [C2[2:]], classes)
-                card("artificial/C3pv2R.jpg", [C3[2:]], classes)
-                card("artificial/C4pv2R.jpg", [C4[2:]], classes)
-                card("artificial/C5pv2R.jpg", [C1[2:], C2[2:], C4[2:]], classes)
+                card("artificial/C1-pv2.jpg", [C1[2:]], classes)
+                card("artificial/C2-pv2.jpg", [C2[2:]], classes)
+                card("artificial/C3-pv2.jpg", [C3[2:]], classes)
+                card("artificial/C4-pv2.jpg", [C4[2:]], classes)
+                card("artificial/C5-pv2.jpg", [C1[2:], C2[2:], C4[2:]], classes)
 
         with ui.card().classes('w-full'):
             ui.markdown('##### Natural & artificial illumination')
@@ -239,14 +256,14 @@ def main():
                 with ui.card():
                     ui.markdown(f'##### {D2}').classes(heading_classes)
                     with ui.row().classes('w-full'):
-                        card("nat&art/D2C2.jpg", [D2T3[2:], C2[2:]], classes)
-                        card("nat&art/D2C5.jpg", [D2T3[2:], C1[2:], C2[2:], C4[2:]], classes)
+                        card("Natural+Artificial/D2T3-C2-pv2.jpg", [D2T3[2:], C2[2:]], classes)
+                        card("Natural+Artificial/D2T3-C5-pv2.jpg", [D2T3[2:], C1[2:], C2[2:], C4[2:]], classes)
 
                 with ui.card():
                     ui.markdown(f'##### {D1}').classes(heading_classes)
                     with ui.row().classes('w-full'):
-                        card("nat&art/D1C2.jpg", [D1T3[2:], C2[2:]], classes)
-                        card("nat&art/D1C5.jpg", [D1T3[2:], C1[2:], C2[2:], C4[2:]], classes)
+                        card("Natural+Artificial/D1T3-C2-pv2.jpg", [D1T3[2:], C2[2:]], classes)
+                        card("Natural+Artificial/D1T3-C5-pv2.jpg", [D1T3[2:], C1[2:], C2[2:], C4[2:]], classes)
 
 
     with expansion(tabs, panels, "Interactive viewer",""):
@@ -258,7 +275,7 @@ def main():
         
 
 
-
+    
             
 
 ui.run()
