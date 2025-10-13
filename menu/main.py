@@ -1,5 +1,7 @@
 from nicegui import ui # pip install nicegui
 
+
+
 selected_cards = [] # global list to control the selected ones
 
 all_cards = {}
@@ -268,7 +270,7 @@ def main():
 
     with expansion(tabs, panels, "Interactive viewer",""):
         global iframe_container
-        iframe_container = ui.html(show_selected_images()).classes('w-full h-[80vh]')
+        iframe_container = ui.html(show_selected_images(), sanitize=False).classes('w-full h-[80vh]')
         
 
         
